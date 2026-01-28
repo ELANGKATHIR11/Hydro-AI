@@ -1,0 +1,5 @@
+{
+  "name": "HydroAI Geospatial Dashboard",
+  "description": "An AI-powered dashboard for monitoring reservoir water spread, integrating bathymetric data, and estimating storage volume changes using simulated satellite intelligence.",
+  "requestFramePermissions": []
+}
