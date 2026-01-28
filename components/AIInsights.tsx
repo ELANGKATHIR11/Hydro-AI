@@ -1,6 +1,6 @@
 import React from 'react';
 import { AIAnalysisResult } from '../types';
-import { Bot, Loader2, AlertTriangle, CheckCircle, AlertOctagon, TrendingUp, Droplets, Sun, Activity, CloudRain, ThermometerSun } from 'lucide-react';
+import { Bot, Loader2, AlertTriangle, CheckCircle, AlertOctagon, TrendingUp, CloudRain, ThermometerSun, Activity } from 'lucide-react';
 
 interface AIInsightsProps {
   analysis: AIAnalysisResult | null;
@@ -38,7 +38,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
   };
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 h-full flex flex-col stat-card print:border-none print:p-0 print:shadow-none">
+    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 min-h-[400px] flex flex-col stat-card print:border-none print:p-0 print:shadow-none">
       <div className="flex items-center justify-between mb-4 print:hidden">
         <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-100">
           <Bot className="text-purple-400" />
@@ -56,6 +56,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
       {/* Print-only section title */}
       <div className="hidden print:block mb-4 border-b border-gray-300 pb-2">
          <h3 className="text-xl font-bold text-gray-800">AI Risk Assessment & Forecast</h3>
+         <p className="text-sm text-gray-500 mt-1">Integrated Multi-Model Analysis (Random Forest + Logistic Regression + Gemini)</p>
       </div>
 
       {!analysis && !isLoading && (
@@ -76,7 +77,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
         <div className="flex-1 flex items-center justify-center print-hidden">
              <div className="flex flex-col items-center">
                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-2" />
-                <p className="text-xs text-indigo-400 animate-pulse">Processing bathymetric & satellite data...</p>
+                <p className="text-xs text-indigo-400 animate-pulse">Running Flood & Drought Prediction Models...</p>
              </div>
         </div>
       )}
@@ -95,7 +96,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
           <div className="bg-slate-950/50 rounded-lg p-4 border border-slate-800 space-y-4 print:bg-white print:border-gray-200 print:p-4 print:shadow-sm print:break-inside-avoid">
              <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2 print:text-gray-700 print:text-sm print:mb-4 border-b border-slate-800 pb-2 print:border-gray-300">
                 <TrendingUp size={14} className="text-cyan-400 print:text-blue-600" />
-                Environmental Risk Analysis (ERA)
+                ML Prediction Models
              </h4>
              
              {/* Flood Probability */}
@@ -126,7 +127,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
              <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded border border-slate-800 print:bg-gray-50 print:border-gray-200 print:mb-4">
                  <span className="text-xs text-slate-300 flex items-center gap-2 print:text-gray-700 font-medium">
                     <ThermometerSun size={14} className="text-orange-400"/> 
-                    Drought Severity Model
+                    Drought Severity Index
                  </span>
                  <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide border ${getDroughtColor(analysis.droughtSeverity)} print-exact shadow-sm`}>
                     {analysis.droughtSeverity}

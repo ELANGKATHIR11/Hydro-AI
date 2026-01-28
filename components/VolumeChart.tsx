@@ -16,7 +16,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const isForecast = label === 'Next Season';
     
     // Check if it's scatter data (payload has slightly different structure)
-    if (payload[0].payload.season) {
+    if (payload[0].payload.season && !payload[0].payload.name) {
         // Scatter Tooltip
         const d = payload[0].payload;
         return (
@@ -34,8 +34,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-slate-800 border border-slate-600 p-3 rounded shadow-lg text-sm print-hidden z-50">
         <p className="text-slate-200 font-bold">{label} {isForecast && '(Predicted)'}</p>
-        <p className="text-sky-400">Volume: {payload[0].value} MCM</p>
-        {!isForecast && <p className="text-indigo-400">Rainfall: {payload[1].value} mm</p>}
+        <p className="text-sky-400">Volume: {payload[0]?.value} MCM</p>
+        {!isForecast && payload[1] && <p className="text-indigo-400">Rainfall: {payload[1].value} mm</p>}
       </div>
     );
   }
@@ -87,10 +87,10 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
   };
 
   return (
-    <div className="w-full bg-slate-900/50 rounded-xl p-4 border border-slate-800 chart-print-container flex flex-col h-[340px]">
+    <div className="w-full bg-slate-900/50 rounded-xl p-4 border border-slate-800 chart-print-container flex flex-col h-[500px]">
       
       {/* Tab Header */}
-      <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-2">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-2 flex-shrink-0">
         <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
             {view === 'series' && <Activity size={16}/>}
             {view === 'correlation' && <TrendingUp size={16}/>}
@@ -127,76 +127,77 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
         
         {/* VIEW 1: TIME SERIES (AREA CHART) */}
         {view === 'series' && (
-            <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={seriesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                    <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorRain" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
-                    </linearGradient>
-                    {/* Forecast Pattern */}
-                    <pattern id="patternForecast" patternUnits="userSpaceOnUse" width="4" height="4">
-                        <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" style={{stroke:"#38bdf8", strokeWidth:1}} />
-                    </pattern>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={10} />
-                <YAxis stroke="#94a3b8" fontSize={10} domain={[0, maxCapacity * 1.1]} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
-                
-                <ReferenceLine 
-                    y={maxCapacity} 
-                    label={{ value: 'Max Capacity', fill: '#ef4444', fontSize: 10, position: 'insideTopRight' }} 
-                    stroke="#ef4444" 
-                    strokeDasharray="3 3" 
-                />
+            <div className="absolute inset-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={seriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorRain" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                        </linearGradient>
+                        {/* Forecast Pattern */}
+                        <pattern id="patternForecast" patternUnits="userSpaceOnUse" width="4" height="4">
+                            <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" style={{stroke:"#38bdf8", strokeWidth:1}} />
+                        </pattern>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={10} />
+                    <YAxis stroke="#94a3b8" fontSize={10} domain={[0, maxCapacity * 1.1]} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
+                    
+                    <ReferenceLine 
+                        y={maxCapacity} 
+                        label={{ value: 'Max Capacity', fill: '#ef4444', fontSize: 10, position: 'insideTopRight' }} 
+                        stroke="#ef4444" 
+                        strokeDasharray="3 3" 
+                    />
 
-                <Area 
-                    type="monotone" 
-                    dataKey="Volume" 
-                    stroke="#38bdf8" 
-                    fillOpacity={1} 
-                    fill="url(#colorVol)" 
-                    strokeWidth={2} 
-                    activeDot={{ r: 6 }}
-                />
-                <Area type="monotone" dataKey="Rainfall" stroke="#818cf8" fillOpacity={1} fill="url(#colorRain)" strokeWidth={2} />
-                </AreaChart>
-            </ResponsiveContainer>
+                    <Area 
+                        type="monotone" 
+                        dataKey="Volume" 
+                        stroke="#38bdf8" 
+                        fillOpacity={1} 
+                        fill="url(#colorVol)" 
+                        strokeWidth={2} 
+                        activeDot={{ r: 6 }}
+                    />
+                    <Area type="monotone" dataKey="Rainfall" stroke="#818cf8" fillOpacity={1} fill="url(#colorRain)" strokeWidth={2} />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
         )}
 
         {/* VIEW 2: SCATTER PLOT (CORRELATION) */}
         {view === 'correlation' && (
-            <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis type="number" dataKey="Rainfall" name="Rainfall" unit="mm" stroke="#94a3b8" fontSize={10}>
-                         <Label value="Rainfall (mm)" offset={-5} position="insideBottom" fill="#64748b" style={{fontSize: 10}} />
-                    </XAxis>
-                    <YAxis type="number" dataKey="Volume" name="Volume" unit="MCM" stroke="#94a3b8" fontSize={10} domain={[0, maxCapacity]}>
-                         <Label value="Storage (MCM)" angle={-90} position="insideLeft" fill="#64748b" style={{fontSize: 10}} />
-                    </YAxis>
-                    <ZAxis type="number" range={[50, 400]} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter name="Catchment Efficiency" data={scatterData} fill="#38bdf8" />
-                    
-                    {/* Add a simplified regression line (visual guide) */}
-                    {/* In real implementation, calculate linear regression points */}
-                </ScatterChart>
-            </ResponsiveContainer>
+            <div className="absolute inset-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis type="number" dataKey="Rainfall" name="Rainfall" unit="mm" stroke="#94a3b8" fontSize={10}>
+                             <Label value="Rainfall (mm)" offset={-5} position="insideBottom" fill="#64748b" style={{fontSize: 10}} />
+                        </XAxis>
+                        <YAxis type="number" dataKey="Volume" name="Volume" unit="MCM" stroke="#94a3b8" fontSize={10} domain={[0, maxCapacity]}>
+                             <Label value="Storage (MCM)" angle={-90} position="insideLeft" fill="#64748b" style={{fontSize: 10}} />
+                        </YAxis>
+                        <ZAxis type="number" range={[50, 400]} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+                        <Scatter name="Catchment Efficiency" data={scatterData} fill="#38bdf8" />
+                    </ScatterChart>
+                </ResponsiveContainer>
+            </div>
         )}
 
         {/* VIEW 3: DATA GRID */}
         {view === 'table' && (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full absolute inset-0">
                 <div className="flex-1 overflow-auto scrollbar-thin rounded border border-slate-700">
                     <table className="w-full text-left text-xs text-slate-300">
-                        <thead className="bg-slate-800 text-slate-400 font-medium sticky top-0">
+                        <thead className="bg-slate-800 text-slate-400 font-medium sticky top-0 z-10">
                             <tr>
                                 <th className="p-2">Year</th>
                                 <th className="p-2">Season</th>
@@ -220,7 +221,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
                 </div>
                 <button 
                     onClick={downloadCSV}
-                    className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded text-xs transition-colors border border-slate-700"
+                    className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded text-xs transition-colors border border-slate-700 flex-shrink-0"
                 >
                     <FileSpreadsheet size={14} /> Export CSV
                 </button>

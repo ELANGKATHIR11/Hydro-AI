@@ -2,6 +2,7 @@ import os
 import json
 import google.generativeai as genai
 from pydantic import BaseModel
+from .ml_models import risk_system
 
 # Configure Gemini
 API_KEY = os.getenv("API_KEY")
@@ -28,28 +29,36 @@ async def generate_gemini_report(data: AIAnalysisRequest):
 
     model = genai.GenerativeModel('gemini-pro')
     
+    # Run Deterministic Risk Models first
+    flood_prob = risk_system.assess_flood_risk(data.current_volume, data.max_capacity, data.season)
+    drought_severity = risk_system.assess_drought_severity(data.rainfall_anomaly)
+    
     # Prompt acts as an interpreter for the ML model's quantitative output
     prompt = f"""
     You are an expert Hydrologist and ML Interpreter. 
     A Random Forest model has analyzed the reservoir '{data.reservoir_name}'.
     
-    Data:
+    Hydrological Data:
     - Season: {data.season}
-    - Predicted Storage Volume: {data.current_volume} MCM (Max: {data.max_capacity} MCM)
-    - Calculated Anomaly Index: {data.rainfall_anomaly:.1f}% deviation from historical average.
+    - Storage Volume: {data.current_volume} MCM (Max: {data.max_capacity} MCM)
+    - Rainfall Anomaly: {data.rainfall_anomaly:.1f}% deviation.
+
+    Predictive Model Outputs (Use these exact values):
+    - Flood Risk Probability: {flood_prob}%
+    - Drought Severity Index: {drought_severity}
 
     Task:
-    Provide a risk assessment based strictly on these numbers.
-    1. If Anomaly is < -20%, Drought Risk is high.
-    2. If Volume > 90% of Max, Flood Probability is high.
+    Provide a risk assessment narrative.
+    1. Integrate the Flood Probability and Drought Severity into your reasoning.
+    2. Suggest specific mitigation strategies based on these risks.
     
     Output strictly valid JSON:
     {{
       "riskLevel": "Low/Moderate/High/Critical",
-      "summary": "2 sentences explaining why the model predicted this volume.",
-      "recommendation": "1 operational recommendation.",
-      "floodProbability": integer (0-100),
-      "droughtSeverity": "Normal/Moderate/Severe/Extreme",
+      "summary": "2 sentences explaining the situation using the model data.",
+      "recommendation": "1 actionable operational recommendation.",
+      "floodProbability": {flood_prob},
+      "droughtSeverity": "{drought_severity}",
       "forecast": "1 sentence outlook on water security."
     }}
     """
@@ -62,11 +71,12 @@ async def generate_gemini_report(data: AIAnalysisRequest):
         return json.loads(text)
     except Exception as e:
         print(f"Gemini Error: {e}")
+        # Fallback using calculated values
         return {
             "riskLevel": "Moderate",
-            "summary": "AI Analysis temporarily unavailable.",
+            "summary": "AI Analysis temporarily unavailable. Risk values calculated via fallback models.",
             "recommendation": "Manual monitoring required.",
-            "floodProbability": 0,
-            "droughtSeverity": "Normal",
+            "floodProbability": flood_prob,
+            "droughtSeverity": drought_severity,
             "forecast": "Error in AI service"
         }

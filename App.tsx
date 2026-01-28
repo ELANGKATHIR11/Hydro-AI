@@ -203,7 +203,7 @@ const App: React.FC = () => {
       
       {/* Header */}
       <header className="bg-slate-900/50 backdrop-blur-lg border-b border-slate-800 sticky top-0 z-50 print-hidden">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Waves className="text-white w-6 h-6" />
@@ -237,7 +237,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
         
         {/* Print Only Header */}
         <div className="hidden print:block mb-8 border-b border-gray-300 pb-4">
@@ -266,28 +266,24 @@ const App: React.FC = () => {
         </div>
 
         {/* Dashboard Grid 
-            Mobile: Auto height, single column stack.
-            Desktop (lg): Fixed height dashboard, 12-col grid.
+            Changed from fixed height to auto flow for better expandability
         */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-14rem)] lg:min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
           
           {/* Left Column: Map & Key Stats (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col gap-6 h-auto lg:h-full">
+          <div className="lg:col-span-8 flex flex-col gap-6">
             
-            {/* Map Container */}
+            {/* Map Container - Increased height */}
             <div className={`
                 bg-slate-900 rounded-xl relative group map-print-container grid gap-4 transition-all duration-500
                 w-full
-                /* Mobile: Fixed min-height to ensure map is usable */
-                min-h-[400px] h-auto
-                /* Desktop: Flex-1 to fill remaining space */
-                lg:h-auto lg:flex-1
+                min-h-[500px] lg:min-h-[600px] h-auto
                 /* Columns based on mode */
                 ${state.isComparisonMode ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}
             `}>
                 
                 {/* Primary Map */}
-                <div className="relative w-full h-[400px] lg:h-full">
+                <div className="relative w-full h-[500px] lg:h-full min-h-[500px]">
                    {isLoadingLive && (
                        <div className="absolute inset-0 z-50 bg-slate-950/60 flex items-center justify-center backdrop-blur-sm">
                            <Loader2 className="animate-spin text-indigo-500 w-8 h-8"/>
@@ -303,7 +299,7 @@ const App: React.FC = () => {
 
                 {/* Comparison Map */}
                 {state.isComparisonMode && (
-                  <div className="relative w-full h-[400px] lg:h-full border-t-2 lg:border-t-0 lg:border-l-2 border-slate-700/50">
+                  <div className="relative w-full h-[500px] lg:h-full min-h-[500px] border-t-2 lg:border-t-0 lg:border-l-2 border-slate-700/50">
                     <MapVisualizer 
                       reservoir={selectedReservoir} 
                       data={comparisonData} 
@@ -392,8 +388,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Right Column: AI & Charts (4 cols) */}
-          {/* Mobile: Stacked, auto height. Desktop: Scrollable column. */}
-          <div className="lg:col-span-4 flex flex-col gap-6 h-auto lg:h-full lg:overflow-y-auto lg:pr-1">
+          <div className="lg:col-span-4 flex flex-col gap-6">
             
             <AIInsights 
               analysis={aiAnalysis}
