@@ -89,7 +89,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
   return (
     <div className="w-full bg-slate-900/50 rounded-xl p-4 border border-slate-800 chart-print-container flex flex-col h-[500px]">
       
-      {/* Tab Header */}
+      {/* Tab Header - Fixed Height part */}
       <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-2 flex-shrink-0">
         <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
             {view === 'series' && <Activity size={16}/>}
@@ -123,12 +123,13 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative">
+      {/* Content Area - Flexible height to fill parent */}
+      <div className="flex-1 min-h-0 relative w-full">
         
         {/* VIEW 1: TIME SERIES (AREA CHART) */}
         {view === 'series' && (
             <div className="absolute inset-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="99%" height="100%" debounce={50} minWidth={0} minHeight={0}>
                     <AreaChart data={seriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
@@ -175,14 +176,14 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
         {/* VIEW 2: SCATTER PLOT (CORRELATION) */}
         {view === 'correlation' && (
             <div className="absolute inset-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="99%" height="100%" debounce={50} minWidth={0} minHeight={0}>
                     <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -10 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis type="number" dataKey="Rainfall" name="Rainfall" unit="mm" stroke="#94a3b8" fontSize={10}>
-                             <Label value="Rainfall (mm)" offset={-5} position="insideBottom" fill="#64748b" style={{fontSize: 10}} />
+                                <Label value="Rainfall (mm)" offset={-5} position="insideBottom" fill="#64748b" style={{fontSize: 10}} />
                         </XAxis>
                         <YAxis type="number" dataKey="Volume" name="Volume" unit="MCM" stroke="#94a3b8" fontSize={10} domain={[0, maxCapacity]}>
-                             <Label value="Storage (MCM)" angle={-90} position="insideLeft" fill="#64748b" style={{fontSize: 10}} />
+                                <Label value="Storage (MCM)" angle={-90} position="insideLeft" fill="#64748b" style={{fontSize: 10}} />
                         </YAxis>
                         <ZAxis type="number" range={[50, 400]} />
                         <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
@@ -194,7 +195,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
 
         {/* VIEW 3: DATA GRID */}
         {view === 'table' && (
-            <div className="flex flex-col h-full absolute inset-0">
+            <div className="absolute inset-0 flex flex-col">
                 <div className="flex-1 overflow-auto scrollbar-thin rounded border border-slate-700">
                     <table className="w-full text-left text-xs text-slate-300">
                         <thead className="bg-slate-800 text-slate-400 font-medium sticky top-0 z-10">

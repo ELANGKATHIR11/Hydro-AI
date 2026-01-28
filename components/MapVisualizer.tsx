@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip } from 'react-leaflet';
 import { Reservoir, SeasonalData } from '../types';
-import { generateWaterPolygon } from '../services/mockData';
-import { Layers } from 'lucide-react';
+import { generateWaterPolygon, getOfficialBoundaries } from '../services/mockData';
+import { Layers, Map as MapIcon } from 'lucide-react';
 import L from 'leaflet';
 
 // Fix for default Leaflet icons in React
@@ -43,7 +43,10 @@ const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
 
 const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, isLive = false }) => {
   const [layerOpacity, setLayerOpacity] = useState(0.65);
+  const [showBoundaries, setShowBoundaries] = useState(false);
   
+  const officialBoundaries = useMemo(() => getOfficialBoundaries(), []);
+
   // Guard against undefined/bad reservoir data with strict fallback
   const safeReservoirLocation = useMemo((): [number, number] => {
     if (reservoir && isValidCoordinate(reservoir.location)) {
@@ -148,6 +151,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
         
         <MapUpdater center={safeReservoirLocation} />
 
+        {/* Dynamic Water Spread Polygon */}
         {waterPolygon.length > 0 && (
           <Polygon positions={waterPolygon as any} pathOptions={mapOptions}>
              <Popup>
@@ -164,6 +168,28 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
             </Popup>
           </Polygon>
         )}
+        
+        {/* Official Boundaries Layer */}
+        {showBoundaries && officialBoundaries.map(b => (
+            <Polygon 
+                key={b.id} 
+                positions={b.coordinates}
+                pathOptions={{
+                    color: '#f97316', // Orange-500
+                    weight: 2,
+                    dashArray: '5, 10',
+                    fillOpacity: 0.05,
+                    fillColor: '#f97316'
+                }}
+            >
+                <Tooltip sticky direction="top">
+                    <div className="text-xs text-center">
+                        <strong className="text-orange-600 block mb-0.5">Official Boundary (FTL)</strong>
+                        <span className="text-slate-700">{b.name}</span>
+                    </div>
+                </Tooltip>
+            </Polygon>
+        ))}
 
         {isValidCoordinate(safeReservoirLocation) && (
           <CircleMarker center={safeReservoirLocation} radius={4} pathOptions={{color: 'white', opacity: 0.8, fillColor: 'white', fillOpacity: 1}}>
@@ -218,7 +244,18 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
              />
          </div>
 
-         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700">
+         {/* Official Boundary Toggle */}
+         <div className="flex items-center justify-between text-slate-300 mt-3 pt-3 border-t border-slate-700">
+             <span className="flex items-center gap-1.5 font-medium"><MapIcon size={12} className="text-orange-400"/> Official Boundaries</span>
+             <button 
+                onClick={() => setShowBoundaries(!showBoundaries)}
+                className={`w-8 h-4 rounded-full transition-colors relative ${showBoundaries ? 'bg-indigo-600' : 'bg-slate-700'}`}
+             >
+                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showBoundaries ? 'translate-x-4' : ''}`}></span>
+             </button>
+         </div>
+
+         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-700">
             <div className="flex flex-col gap-1 w-full">
                 <span className="text-[10px] text-slate-400">Water Intensity Index</span>
                 <div className="h-1.5 w-full bg-gradient-to-r from-blue-300 via-blue-500 to-blue-900 rounded-full"></div>

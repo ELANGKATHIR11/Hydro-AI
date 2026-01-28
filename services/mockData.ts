@@ -1,4 +1,4 @@
-import { Reservoir, SeasonalData } from '../types';
+import { Reservoir, SeasonalData, BoundaryData } from '../types';
 
 export const RESERVOIRS: Reservoir[] = [
   {
@@ -101,6 +101,40 @@ export const generateWaterPolygon = (center: [number, number], volumePct: number
     }
   }
   return points;
+};
+
+// Generate simulated "Official" boundaries (FTL - Full Tank Level)
+export const getOfficialBoundaries = (): BoundaryData[] => {
+  return RESERVOIRS.map(res => {
+    const center = res.location;
+    const points: [number, number][] = [];
+    const sides = 16;
+    // Static radius representing Max Capacity boundary (approx 3-5km)
+    const radius = 0.035; 
+
+    // Deterministic shape based on ID
+    const seed = res.id.charCodeAt(res.id.length - 1);
+
+    for (let i = 0; i < sides; i++) {
+        const angle = (i * 360) / sides;
+        const rad = (angle * Math.PI) / 180;
+        
+        // Use consistent noise to create a jagged, realistic survey shape
+        // that stays constant regardless of season/volume
+        const noise = Math.sin(seed * i * 137.5) * 0.008; 
+        const r = radius + noise;
+        
+        const lat = center[0] + r * Math.cos(rad);
+        const lng = center[1] + r * Math.sin(rad) * 1.3;
+        
+        points.push([lat, lng]);
+    }
+    return {
+        id: res.id,
+        name: res.name,
+        coordinates: points
+    };
+  });
 };
 
 // Generate historical data

@@ -19,6 +19,12 @@ export interface SeasonalData {
   cloudCover: number; // %
 }
 
+export interface BoundaryData {
+  id: string;
+  name: string;
+  coordinates: [number, number][]; // Polygon ring
+}
+
 export interface SimulationState {
   selectedReservoirId: string;
   year: number;
