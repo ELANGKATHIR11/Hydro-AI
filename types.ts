@@ -38,3 +38,14 @@ export interface AIAnalysisResult {
   droughtSeverity: 'Normal' | 'Moderate' | 'Severe' | 'Extreme';
   forecast: string;
 }
+
+export interface ModelMetric {
+  accuracy: number | string;
+  type: string;
+  status: string;
+  last_updated: string | null;
+}
+
+export interface MLMetricsResponse {
+  [modelName: string]: ModelMetric;
+}

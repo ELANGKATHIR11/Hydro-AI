@@ -1,13 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RESERVOIRS, getHistoricalData } from './services/mockData';
-import { SimulationState, AIAnalysisResult } from './types';
+import { SimulationState, AIAnalysisResult, SeasonalData } from './types';
 import { generateHydrologicalReport } from './services/geminiService';
+import { api } from './services/api';
 import MapVisualizer from './components/MapVisualizer';
 import VolumeChart from './components/VolumeChart';
 import AIInsights from './components/AIInsights';
 import DashboardControls from './components/DashboardControls';
 import ModelFeedback from './components/ModelFeedback';
-import { Waves, BarChart3, Info, Download, Mountain, Timer, Loader2 } from 'lucide-react';
+import HydroChat from './components/HydroChat';
+import MLStatusPanel from './components/MLStatusPanel';
+import { Waves, BarChart3, Info, Download, Mountain, Timer, Loader2, Wifi, WifiOff, FileText } from 'lucide-react';
 
 const App: React.FC = () => {
   const [state, setState] = useState<SimulationState>({
@@ -21,6 +24,13 @@ const App: React.FC = () => {
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<'online'|'offline'>('offline');
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Real-time fetched data state
+  const [liveData, setLiveData] = useState<Partial<SeasonalData> | null>(null);
+  const [mlForecast, setMlForecast] = useState<number | null>(null);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
 
   const selectedReservoir = useMemo(() => 
     RESERVOIRS.find(r => r.id === state.selectedReservoirId) || RESERVOIRS[0], 
@@ -30,22 +40,118 @@ const App: React.FC = () => {
     getHistoricalData(selectedReservoir.id), 
   [selectedReservoir.id]);
 
-  // Primary Data (Left Map)
-  const currentData = useMemo(() => 
+  const availableYears = useMemo(() => Array.from(new Set(historicalData.map(d => d.year))).sort(), [historicalData]);
+  const availableSeasons = ['Winter', 'Summer', 'Monsoon', 'Post-Monsoon'] as const;
+
+  // Base physics data (fallback)
+  const baseData = useMemo(() => 
     historicalData.find(d => d.year === state.year && d.season === state.season) || historicalData[0],
   [historicalData, state.year, state.season]);
 
-  // Comparison Data (Right Map)
+  // Merged Data: Physics + Real Backend Data
+  const currentData = useMemo(() => {
+    if (!liveData) return baseData;
+    return { ...baseData, ...liveData } as SeasonalData;
+  }, [baseData, liveData]);
+
   const comparisonData = useMemo(() => 
     historicalData.find(d => d.year === state.compareYear && d.season === state.compareSeason) || historicalData[0],
   [historicalData, state.compareYear, state.compareSeason]);
 
-  const availableYears = Array.from(new Set(historicalData.map(d => d.year))).sort();
-  const availableSeasons = ['Winter', 'Summer', 'Monsoon', 'Post-Monsoon'] as const;
+  // --- Time-Lapse Effect ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setState(prev => {
+          const currentSeasonIdx = availableSeasons.indexOf(prev.season);
+          
+          let nextSeasonIdx = currentSeasonIdx + 1;
+          let nextYear = prev.year;
+
+          // Advance season
+          if (nextSeasonIdx >= availableSeasons.length) {
+            nextSeasonIdx = 0;
+            nextYear = prev.year + 1;
+          }
+
+          // Loop years if end reached
+          const maxYear = Math.max(...availableYears);
+          const minYear = Math.min(...availableYears);
+          
+          if (nextYear > maxYear) {
+            nextYear = minYear;
+            nextSeasonIdx = 0;
+          }
+
+          return {
+            ...prev,
+            year: nextYear,
+            season: availableSeasons[nextSeasonIdx]
+          };
+        });
+      }, 2000); // 2 seconds per frame
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, availableYears]);
+
+
+  // --- Effect: Fetch Real Data from Python Backend ---
+  useEffect(() => {
+    const fetchRealData = async () => {
+        setIsLoadingLive(true);
+        try {
+            // 1. Fetch Satellite/Physics Data
+            const satData = await api.getSatelliteData(
+                selectedReservoir.id,
+                selectedReservoir.location[0],
+                selectedReservoir.location[1],
+                state.season,
+                selectedReservoir.maxCapacity
+            );
+            
+            // 2. Check for Anomalies (ML)
+            await api.checkAnomaly(satData.data.volume_mcm, baseData.volume);
+
+            setLiveData({
+                volume: satData.data.volume_mcm,
+                surfaceArea: satData.data.surface_area_sqkm,
+                waterLevel: satData.data.water_level_m,
+                cloudCover: satData.data.cloud_cover_pct
+            });
+
+            // 3. Get ML Forecast for Next Season
+            const volumes = historicalData.map(d => d.volume);
+            const forecastVal = await api.getForecast(volumes);
+            setMlForecast(forecastVal);
+
+            // If the source indicates it's a fallback simulation, mark backend as offline
+            if (satData.source.includes('Offline')) {
+                setBackendStatus('offline');
+            } else {
+                setBackendStatus('online');
+            }
+
+        } catch (e) {
+            console.warn("Backend error, defaulting to offline mode.");
+            setBackendStatus('offline');
+            setLiveData(null);
+            setMlForecast(null);
+        } finally {
+            setIsLoadingLive(false);
+        }
+    };
+
+    fetchRealData();
+  }, [selectedReservoir, state.season, state.year, historicalData, baseData.volume]);
+
 
   const handleStateChange = (newState: Partial<SimulationState>) => {
     setState(prev => ({ ...prev, ...newState }));
-    // Reset analysis when data context changes to ensure validity
+    // If user interacts manually, stop playing
+    if (newState.year || newState.season || newState.selectedReservoirId) {
+        setIsPlaying(false);
+    }
     setAiAnalysis(null);
   };
 
@@ -64,29 +170,32 @@ const App: React.FC = () => {
   };
 
   const handleDownloadReport = async () => {
-    // If analysis is already present, just print
+    // If analysis is already there, print immediately
     if (aiAnalysis) {
       window.print();
       return;
     }
-
-    // Otherwise, generate it first then print
+    
+    // Otherwise generate it first, then print
     const result = await handleGenerateAI();
     if (result) {
-      // Small delay to allow React to render the new analysis into the DOM before printing
+      // Give React time to render the new AIInsights component
       setTimeout(() => {
         window.print();
-      }, 500);
+      }, 800);
     } else {
-        // Fallback if generation fails
         alert("Report generation failed. Printing without AI insights.");
         window.print();
     }
   };
 
-  const handleFeedbackSubmit = (feedback: any) => {
-    // In a real application, this would post to a backend
-    console.log("RLHF Feedback received:", feedback);
+  const handleFeedbackSubmit = async (feedback: any) => {
+    try {
+        await api.sendFeedback(feedback);
+        console.log("RLHF Feedback sent.");
+    } catch (e) {
+        // Quietly fail
+    }
   };
 
   return (
@@ -105,8 +214,11 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-4 text-xs font-medium text-slate-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Live Satellite Feed</span>
+             <div className={`hidden md:flex items-center gap-4 text-xs font-medium ${backendStatus === 'online' ? 'text-green-500' : 'text-orange-500'}`}>
+                <span className="flex items-center gap-1">
+                    {backendStatus === 'online' ? <Wifi size={14} /> : <WifiOff size={14}/>} 
+                    {backendStatus === 'online' ? "Live Backend" : "Simulated Mode"}
+                </span>
              </div>
              <button 
                 onClick={handleDownloadReport}
@@ -144,10 +256,12 @@ const App: React.FC = () => {
         {/* Controls Layer (Hidden on Print) */}
         <div className="print-hidden">
             <DashboardControls 
-            state={state} 
-            onChange={handleStateChange}
-            availableSeasons={availableSeasons as any}
-            availableYears={availableYears}
+              state={state} 
+              onChange={handleStateChange}
+              availableSeasons={availableSeasons as any}
+              availableYears={availableYears}
+              isPlaying={isPlaying}
+              onTogglePlay={() => setIsPlaying(!isPlaying)}
             />
         </div>
 
@@ -157,14 +271,20 @@ const App: React.FC = () => {
           {/* Left Column: Map & Key Stats (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6 h-full">
             
-            {/* Map Container - Toggles between Grid and Flex based on mode */}
+            {/* Map Container */}
             <div className={`flex-1 bg-slate-900 rounded-xl relative group min-h-[300px] map-print-container grid gap-4 transition-all duration-500 ${state.isComparisonMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 
                 {/* Primary Map */}
                 <div className="relative h-full w-full">
+                   {isLoadingLive && (
+                       <div className="absolute inset-0 z-50 bg-slate-950/60 flex items-center justify-center backdrop-blur-sm">
+                           <Loader2 className="animate-spin text-indigo-500 w-8 h-8"/>
+                       </div>
+                   )}
                    <MapVisualizer 
                       reservoir={selectedReservoir} 
                       data={currentData} 
+                      isLive={backendStatus === 'online'}
                       label={state.isComparisonMode ? `${state.season} ${state.year} (Primary)` : undefined}
                    />
                 </div>
@@ -175,13 +295,12 @@ const App: React.FC = () => {
                     <MapVisualizer 
                       reservoir={selectedReservoir} 
                       data={comparisonData} 
+                      isLive={false} // Historical comparison is always "simulated" or "stored"
                       label={`${state.compareSeason} ${state.compareYear} (Comparison)`}
                     />
-                    {/* Floating Close Button for quick exit */}
                     <button 
                        onClick={() => handleStateChange({ isComparisonMode: false })}
                        className="absolute top-2 right-2 z-[500] bg-slate-800 text-slate-300 p-1 rounded-full hover:bg-slate-700 shadow-lg"
-                       title="Exit Comparison"
                     >
                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
@@ -200,7 +319,7 @@ const App: React.FC = () => {
                <StatCard 
                  label="Surface Area" 
                  value={`${currentData.surfaceArea} km²`} 
-                 sub="Extracted via NDWI"
+                 sub={backendStatus === 'online' ? "Real-time GEE L2A" : "Simulated NDWI"}
                  icon={<Waves size={14} className="text-blue-400"/>}
                />
                <StatCard 
@@ -223,6 +342,17 @@ const App: React.FC = () => {
                     <Info size={16} className="text-indigo-400"/>
                     Reservoir Profile: {selectedReservoir.name}
                  </h3>
+                 
+                 {/* Description Section */}
+                 <div className="mb-4 bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
+                    <div className="flex items-start gap-2">
+                        <FileText size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-slate-400 italic leading-relaxed">
+                            {selectedReservoir.description}
+                        </p>
+                    </div>
+                 </div>
+
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-transparent print:border-gray-200">
                         <Mountain size={18} className="text-emerald-500" />
@@ -246,9 +376,6 @@ const App: React.FC = () => {
                         </div>
                     </div>
                  </div>
-                 <p className="mt-3 text-xs text-slate-400 italic">
-                     {selectedReservoir.description}
-                 </p>
             </div>
           </div>
 
@@ -261,35 +388,26 @@ const App: React.FC = () => {
               onGenerate={handleGenerateAI}
             />
 
-            {/* Model Feedback & Comparison Section */}
             {aiAnalysis && (
                 <ModelFeedback 
                     analysis={aiAnalysis} 
-                    data={currentData} 
+                    data={currentData as SeasonalData} 
                     onFeedbackSubmit={handleFeedbackSubmit} 
                 />
             )}
 
-            <VolumeChart data={historicalData} />
+            <VolumeChart 
+              data={historicalData} 
+              forecast={mlForecast} 
+              maxCapacity={selectedReservoir.maxCapacity}
+            />
             
-            <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl print-hidden">
-               <div className="flex items-center gap-2 mb-2 text-slate-100 font-medium">
-                  <Info size={16} />
-                  <span className="text-sm">Technical Methodology</span>
-               </div>
-               <p className="text-xs text-slate-400 leading-relaxed">
-                 Water spread areas are automatically extracted using <strong>Sentinel-2</strong> imagery via a U-Net CNN model trained on MNDWI indices. Volume is derived by integrating the extracted surface area ($A_i$) against bathymetric DEMs ($\Delta h$).
-               </p>
-            </div>
-            
-            {/* Print Footer */}
-            <div className="hidden print:block text-[10px] text-gray-500 mt-auto pt-4 border-t border-gray-200">
-                <p>This report is computer-generated using simulated satellite data for demonstration purposes.</p>
-                <p>© 2024 HydroAI | Water Resources Department</p>
-            </div>
-
+            <MLStatusPanel />
           </div>
         </div>
+        
+        {/* Floating Chatbot */}
+        <HydroChat reservoir={selectedReservoir} currentData={currentData} />
       </main>
     </div>
   );

@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip } from 'react-leaflet';
 import { Reservoir, SeasonalData } from '../types';
 import { generateWaterPolygon } from '../services/mockData';
+import { Layers } from 'lucide-react';
 import L from 'leaflet';
 
 // Fix for default Leaflet icons in React
@@ -17,33 +18,38 @@ interface MapVisualizerProps {
   reservoir: Reservoir;
   data: SeasonalData;
   label?: string; // Optional label for comparison mode
+  isLive?: boolean; // Status of the data feed
 }
+
+const DEFAULT_CENTER: [number, number] = [13.0, 80.0];
 
 const isValidCoordinate = (coord: any): coord is [number, number] => {
   return Array.isArray(coord) && 
          coord.length === 2 && 
-         Number.isFinite(coord[0]) && 
-         Number.isFinite(coord[1]);
+         typeof coord[0] === 'number' && Number.isFinite(coord[0]) && !Number.isNaN(coord[0]) &&
+         typeof coord[1] === 'number' && Number.isFinite(coord[1]) && !Number.isNaN(coord[1]);
 };
 
 const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
   useEffect(() => {
     if (isValidCoordinate(center)) {
+       // Debounce flyTo or handle potential animation conflicts if needed
        map.flyTo(center, 12, { duration: 2 });
     }
   }, [center, map]);
   return null;
 };
 
-const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label }) => {
+const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, isLive = false }) => {
+  const [layerOpacity, setLayerOpacity] = useState(0.65);
   
-  // Guard against undefined/bad reservoir data
+  // Guard against undefined/bad reservoir data with strict fallback
   const safeReservoirLocation = useMemo((): [number, number] => {
     if (reservoir && isValidCoordinate(reservoir.location)) {
         return reservoir.location;
     }
-    return [13.0, 80.0]; // Default fallback
+    return DEFAULT_CENTER;
   }, [reservoir]);
 
   // Derived inlet location with strict validation
@@ -66,17 +72,19 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label })
     }
 
     let volPct = (data.volume / reservoir.maxCapacity) * 100;
-    if (!Number.isFinite(volPct)) volPct = 0;
+    // Ensure volPct is a finite number
+    if (!Number.isFinite(volPct) || Number.isNaN(volPct)) volPct = 0;
     
     const poly = generateWaterPolygon(safeReservoirLocation, volPct);
     
-    // Filter out any potential invalid points
+    // Filter out any potential invalid points to satisfy Leaflet
     return poly.filter(p => isValidCoordinate(p));
   }, [reservoir, data, safeReservoirLocation]);
 
   const volumePercentage = useMemo(() => {
     if (!data?.volume || !reservoir?.maxCapacity) return 0;
-    return (data.volume / reservoir.maxCapacity) * 100;
+    const val = (data.volume / reservoir.maxCapacity) * 100;
+    return Number.isFinite(val) ? val : 0;
   }, [data, reservoir]);
 
   const mapOptions = useMemo(() => {
@@ -102,11 +110,11 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label })
 
     return {
       fillColor,
-      fillOpacity: 0.65,
+      fillOpacity: layerOpacity, // Use dynamic opacity
       color: strokeColor,
       weight: 2
     };
-  }, [volumePercentage]);
+  }, [volumePercentage, layerOpacity]);
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl relative">
@@ -179,21 +187,37 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label })
       </MapContainer>
       
       {/* Overlay Info */}
-      <div className="absolute top-4 left-14 z-[400] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden">
+      <div className="absolute top-4 left-14 z-[400] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden w-64">
          {label && (
              <div className="mb-2 pb-2 border-b border-slate-700">
                  <h4 className="font-bold text-white uppercase tracking-wider">{label}</h4>
              </div>
          )}
-         <h4 className="font-bold text-sky-400 flex items-center gap-2">
+         <h4 className={`font-bold flex items-center gap-2 ${isLive ? 'text-sky-400' : 'text-orange-400'}`}>
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isLive ? 'bg-sky-400' : 'bg-orange-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isLive ? 'bg-sky-500' : 'bg-orange-500'}`}></span>
             </span>
-            Live Satellite Feed
+            {isLive ? 'Live Satellite Feed' : 'Simulated Physics Feed'}
          </h4>
-         <p className="text-slate-300 mt-1">Source: Sentinel-2 (L2A)</p>
-         <p className="text-slate-300">Band Combination: NDWI</p>
+         <p className="text-slate-300 mt-1">Source: {isLive ? 'Sentinel-2 (L2A)' : 'Approximation Model'}</p>
+         
+         <div className="mt-3">
+             <div className="flex justify-between items-center text-slate-400 mb-1">
+                <span className="flex items-center gap-1"><Layers size={10}/> Layer Opacity</span>
+                <span className="font-mono">{Math.round(layerOpacity * 100)}%</span>
+             </div>
+             <input 
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05"
+                value={layerOpacity}
+                onChange={(e) => setLayerOpacity(parseFloat(e.target.value))}
+                className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+             />
+         </div>
+
          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700">
             <div className="flex flex-col gap-1 w-full">
                 <span className="text-[10px] text-slate-400">Water Intensity Index</span>

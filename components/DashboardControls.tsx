@@ -1,16 +1,25 @@
 import React from 'react';
 import { RESERVOIRS } from '../services/mockData';
 import { SimulationState, SeasonalData } from '../types';
-import { Calendar, Droplets, MapPin, GitCompare, X, ArrowRightLeft } from 'lucide-react';
+import { Calendar, Droplets, MapPin, GitCompare, X, ArrowRightLeft, Play, Pause } from 'lucide-react';
 
 interface DashboardControlsProps {
   state: SimulationState;
   onChange: (newState: Partial<SimulationState>) => void;
   availableSeasons: SeasonalData['season'][];
   availableYears: number[];
+  isPlaying: boolean;
+  onTogglePlay: () => void;
 }
 
-const DashboardControls: React.FC<DashboardControlsProps> = ({ state, onChange, availableSeasons, availableYears }) => {
+const DashboardControls: React.FC<DashboardControlsProps> = ({ 
+  state, 
+  onChange, 
+  availableSeasons, 
+  availableYears,
+  isPlaying,
+  onTogglePlay
+}) => {
   
   const toggleComparison = () => {
     onChange({ 
@@ -99,18 +108,33 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({ state, onChange, 
             ))}
           </select>
 
-          {/* Comparison Toggle */}
-          <button 
-            onClick={toggleComparison}
-            className={`mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all ${
-              state.isComparisonMode 
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 hover:bg-purple-500/30' 
-              : 'bg-slate-700 text-slate-300 border border-transparent hover:bg-slate-600'
-            }`}
-          >
-            {state.isComparisonMode ? <X size={14} /> : <GitCompare size={14} />}
-            {state.isComparisonMode ? "Exit Comparison Mode" : "Compare Time Periods"}
-          </button>
+          <div className="flex gap-2 mt-4">
+              {/* Play / Pause Time-Lapse */}
+              <button
+                onClick={onTogglePlay}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all ${
+                  isPlaying 
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/50'
+                }`}
+              >
+                  {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                  {isPlaying ? "Pause Time-Lapse" : "Play Time-Lapse"}
+              </button>
+
+              {/* Comparison Toggle */}
+              <button 
+                onClick={toggleComparison}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all ${
+                  state.isComparisonMode 
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 hover:bg-purple-500/30' 
+                  : 'bg-slate-700 text-slate-300 border border-transparent hover:bg-slate-600'
+                }`}
+              >
+                {state.isComparisonMode ? <X size={14} /> : <GitCompare size={14} />}
+                {state.isComparisonMode ? "Exit Compare" : "Compare"}
+              </button>
+          </div>
         </div>
 
         {/* Date Controls */}

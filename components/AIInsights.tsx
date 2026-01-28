@@ -1,6 +1,6 @@
 import React from 'react';
 import { AIAnalysisResult } from '../types';
-import { Bot, Loader2, AlertTriangle, CheckCircle, AlertOctagon, TrendingUp, Droplets, Sun, Activity } from 'lucide-react';
+import { Bot, Loader2, AlertTriangle, CheckCircle, AlertOctagon, TrendingUp, Droplets, Sun, Activity, CloudRain, ThermometerSun } from 'lucide-react';
 
 interface AIInsightsProps {
   analysis: AIAnalysisResult | null;
@@ -30,10 +30,10 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
 
   const getDroughtColor = (severity: string) => {
     switch(severity) {
-        case 'Extreme': return 'bg-red-900 text-red-200 print:bg-red-200 print:text-red-900';
-        case 'Severe': return 'bg-orange-900 text-orange-200 print:bg-orange-200 print:text-orange-900';
-        case 'Moderate': return 'bg-yellow-900 text-yellow-200 print:bg-yellow-200 print:text-yellow-900';
-        default: return 'bg-emerald-900 text-emerald-200 print:bg-emerald-200 print:text-emerald-900';
+        case 'Extreme': return 'bg-red-900 text-red-100 border-red-700 print:bg-red-200 print:text-red-900';
+        case 'Severe': return 'bg-orange-900 text-orange-100 border-orange-700 print:bg-orange-200 print:text-orange-900';
+        case 'Moderate': return 'bg-yellow-900 text-yellow-100 border-yellow-700 print:bg-yellow-200 print:text-yellow-900';
+        default: return 'bg-emerald-900 text-emerald-100 border-emerald-700 print:bg-emerald-200 print:text-emerald-900';
     }
   };
 
@@ -91,59 +91,73 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
             </div>
           </div>
 
-          {/* Predictive Analytics Section - Enhanced for Print */}
-          <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800 space-y-3 print:bg-white print:border-gray-200 print:p-4 print:shadow-sm print:break-inside-avoid">
-             <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2 print:text-gray-700 print:text-sm print:mb-3">
+          {/* Predictive Analytics Section */}
+          <div className="bg-slate-950/50 rounded-lg p-4 border border-slate-800 space-y-4 print:bg-white print:border-gray-200 print:p-4 print:shadow-sm print:break-inside-avoid">
+             <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2 print:text-gray-700 print:text-sm print:mb-4 border-b border-slate-800 pb-2 print:border-gray-300">
                 <TrendingUp size={14} className="text-cyan-400 print:text-blue-600" />
-                Predictive Analytics (3-Month Outlook)
+                Environmental Risk Analysis (ERA)
              </h4>
              
              {/* Flood Probability */}
-             <div className="print:mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300 flex items-center gap-1 print:text-gray-700 font-medium">
-                        <Droplets size={12} className="text-blue-400"/> Flood Probability
+             <div className="print:mb-4">
+                <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-slate-300 flex items-center gap-2 print:text-gray-700 font-medium">
+                        <CloudRain size={14} className="text-blue-400"/> 
+                        Flood Risk Probability
                     </span>
                     <span className={`font-mono font-bold ${analysis.floodProbability > 50 ? 'text-red-400' : 'text-cyan-300'} print:text-black`}>
                         {analysis.floodProbability}%
                     </span>
                 </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden print:bg-gray-200 print-exact">
+                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden print:bg-gray-200 print-exact border border-slate-700/50 print:border-gray-300">
                     <div 
                         className={`h-full rounded-full transition-all duration-1000 ${analysis.floodProbability > 70 ? 'bg-red-500' : analysis.floodProbability > 40 ? 'bg-orange-500' : 'bg-cyan-500'} print-exact`} 
                         style={{width: `${analysis.floodProbability}%`}}
                     ></div>
                 </div>
+                <div className="mt-1 flex justify-between text-[10px] text-slate-500 print:text-gray-500">
+                    <span>Safe</span>
+                    <span>Warning</span>
+                    <span>Critical</span>
+                </div>
              </div>
 
              {/* Drought Severity */}
-             <div className="flex items-center justify-between print:mb-3">
-                 <span className="text-xs text-slate-300 flex items-center gap-1 print:text-gray-700 font-medium">
-                    <Sun size={12} className="text-orange-400"/> Drought Severity Model
+             <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded border border-slate-800 print:bg-gray-50 print:border-gray-200 print:mb-4">
+                 <span className="text-xs text-slate-300 flex items-center gap-2 print:text-gray-700 font-medium">
+                    <ThermometerSun size={14} className="text-orange-400"/> 
+                    Drought Severity Model
                  </span>
-                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${getDroughtColor(analysis.droughtSeverity)} print-exact`}>
+                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide border ${getDroughtColor(analysis.droughtSeverity)} print-exact shadow-sm`}>
                     {analysis.droughtSeverity}
                  </span>
              </div>
              
              {/* Forecast Text */}
-             <div className="pt-2 border-t border-slate-800 print:border-gray-200">
-                 <div className="flex items-center gap-1 mb-1">
-                    <Activity size={10} className="text-slate-500"/>
+             <div className="pt-3 border-t border-slate-800 print:border-gray-200">
+                 <div className="flex items-center gap-1 mb-1.5">
+                    <Activity size={12} className="text-slate-500"/>
                     <span className="text-[10px] text-slate-500 uppercase tracking-wide">Hydrological Outlook</span>
                  </div>
-                 <p className="text-xs text-slate-400 italic leading-snug print:text-gray-600 print:not-italic print:leading-normal">"{analysis.forecast}"</p>
+                 <p className="text-xs text-slate-300 italic leading-relaxed border-l-2 border-slate-700 pl-3 print:text-gray-700 print:not-italic print:leading-normal print:border-blue-500">
+                    "{analysis.forecast}"
+                 </p>
              </div>
           </div>
           
-          <div className="space-y-1 print:mt-4">
+          <div className="space-y-2 print:mt-4">
             <h4 className="text-xs font-bold text-slate-400 uppercase print:text-gray-700">Executive Summary</h4>
-            <p className="text-sm text-slate-300 leading-relaxed print:text-gray-800 text-justify">{analysis.summary}</p>
+            <p className="text-sm text-slate-300 leading-relaxed print:text-gray-800 text-justify bg-slate-900/30 p-2 rounded print:bg-transparent print:p-0">
+                {analysis.summary}
+            </p>
           </div>
 
-          <div className="space-y-1 pt-2 border-t border-slate-700/50 print:border-gray-300 print:mt-4">
+          <div className="space-y-2 pt-2 border-t border-slate-700/50 print:border-gray-300 print:mt-4">
              <h4 className="text-xs font-bold text-slate-400 uppercase print:text-gray-700">Operational Recommendation</h4>
-             <p className="text-sm font-medium text-sky-300 print:text-blue-800">{analysis.recommendation}</p>
+             <div className="flex items-start gap-2">
+                 <CheckCircle size={16} className="text-sky-400 mt-0.5 print:text-blue-700"/>
+                 <p className="text-sm font-medium text-sky-300 print:text-blue-800">{analysis.recommendation}</p>
+             </div>
           </div>
         </div>
       )}

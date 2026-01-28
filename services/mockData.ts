@@ -14,7 +14,7 @@ export const RESERVOIRS: Reservoir[] = [
   {
     id: 'res-cholavaram',
     name: 'Cholavaram Lake',
-    location: [13.2330, 80.1420],
+    location: [13.227151775042893, 80.15101241979404],
     maxCapacity: 30, // ~1081 mcft
     fullLevel: 18.5,
     catchmentArea: 72,
@@ -24,7 +24,7 @@ export const RESERVOIRS: Reservoir[] = [
   {
     id: 'res-veeranam',
     name: 'Veeranam Lake',
-    location: [11.3556, 79.5414],
+    location: [11.336719486852514, 79.53725689022922],
     maxCapacity: 41, // ~1465 mcft
     fullLevel: 14.5,
     catchmentArea: 443,
@@ -44,7 +44,7 @@ export const RESERVOIRS: Reservoir[] = [
   {
     id: 'res-redhills',
     name: 'Red Hills (Puzhal Lake)',
-    location: [13.1537, 80.1914],
+    location: [13.15875337798207, 80.1721872082349],
     maxCapacity: 93, // ~3300 mcft
     fullLevel: 15.2,
     catchmentArea: 63,
@@ -54,7 +54,7 @@ export const RESERVOIRS: Reservoir[] = [
   {
     id: 'res-kaveripakkam',
     name: 'Kaveripakkam Lake',
-    location: [12.8966, 79.4623],
+    location: [12.94268536091038, 79.44761556090633],
     maxCapacity: 42, // ~1474 mcft
     fullLevel: 12.8,
     catchmentArea: 120,
@@ -65,27 +65,38 @@ export const RESERVOIRS: Reservoir[] = [
 
 // Helper to generate a rough polygon (circle-ish) for the map based on volume
 export const generateWaterPolygon = (center: [number, number], volumePct: number) => {
-  if (!center || !Number.isFinite(center[0]) || !Number.isFinite(center[1])) {
+  // Strict input validation
+  if (!center || 
+      !Array.isArray(center) || 
+      center.length !== 2 ||
+      !Number.isFinite(center[0]) || 
+      !Number.isFinite(center[1])) {
     return [];
   }
 
-  const points = [];
+  const points: [number, number][] = [];
   const sides = 20;
+  
   // Adjusted radius scaling for better visibility of these specific lakes
-  // Ensure we don't multiply by NaN or Infinity
-  const safeVolPct = Number.isFinite(volumePct) ? volumePct : 0;
+  // Ensure we don't multiply by NaN or Infinity. Fallback to 0.
+  const safeVolPct = Number.isFinite(volumePct) && !Number.isNaN(volumePct) ? volumePct : 0;
   const baseRadius = 0.015 * (safeVolPct / 100); 
+
+  // Prevent invalid radius
+  if (!Number.isFinite(baseRadius)) return [];
 
   for (let i = 0; i < sides; i++) {
     const angle = (i * 360) / sides;
     const rad = (angle * Math.PI) / 180;
     // Add some noise to make it look organic
     const r = baseRadius * (0.8 + Math.random() * 0.4); 
+    
+    // Calculate coordinates
     const lat = center[0] + r * Math.cos(rad);
     const lng = center[1] + r * Math.sin(rad) * 1.2; // Slight oval
     
-    // Safety check: only push if coordinates are numbers
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    // Double check that generated points are finite numbers
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !Number.isNaN(lat) && !Number.isNaN(lng)) {
       points.push([lat, lng]);
     }
   }
