@@ -159,8 +159,15 @@ const HydroChat: React.FC<HydroChatProps> = ({ reservoir, currentData }) => {
     );
   }
 
+  // Responsive Styles:
+  // Mobile: 90% width, centered (left-4 right-4), slightly shorter height
+  // Desktop: Fixed width (w-96), right aligned (md:right-6)
+  const responsiveClasses = isMinimized 
+    ? 'bottom-6 right-6 left-6 md:left-auto md:w-72 h-14 rounded-full overflow-hidden' 
+    : 'bottom-6 right-4 left-4 md:left-auto md:right-6 md:w-96 h-[450px] md:h-[500px] rounded-xl';
+
   return (
-    <div className={`fixed z-50 bg-slate-900 border border-slate-700 shadow-2xl transition-all duration-300 flex flex-col print-hidden ${isMinimized ? 'bottom-6 right-6 w-72 h-14 rounded-full overflow-hidden' : 'bottom-6 right-6 w-96 h-[500px] rounded-xl'}`}>
+    <div className={`fixed z-50 bg-slate-900 border border-slate-700 shadow-2xl transition-all duration-300 flex flex-col print-hidden ${responsiveClasses}`}>
       
       {/* Header */}
       <div className={`flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700 cursor-pointer ${isMinimized ? 'h-full' : ''}`} onClick={() => isMinimized && setIsMinimized(false)}>

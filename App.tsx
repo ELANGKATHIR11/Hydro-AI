@@ -199,7 +199,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 pb-16 lg:pb-0">
       
       {/* Header */}
       <header className="bg-slate-900/50 backdrop-blur-lg border-b border-slate-800 sticky top-0 z-50 print-hidden">
@@ -230,7 +230,7 @@ const App: React.FC = () => {
                 ) : (
                     <Download size={14} />
                 )}
-                {isGeneratingReport ? "Generating..." : "Download Report"}
+                <span className="hidden sm:inline">{isGeneratingReport ? "Generating..." : "Download Report"}</span>
              </button>
           </div>
         </div>
@@ -265,17 +265,29 @@ const App: React.FC = () => {
             />
         </div>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-14rem)] min-h-[600px]">
+        {/* Dashboard Grid 
+            Mobile: Auto height, single column stack.
+            Desktop (lg): Fixed height dashboard, 12-col grid.
+        */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-14rem)] lg:min-h-[600px]">
           
           {/* Left Column: Map & Key Stats (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col gap-6 h-full">
+          <div className="lg:col-span-8 flex flex-col gap-6 h-auto lg:h-full">
             
             {/* Map Container */}
-            <div className={`flex-1 bg-slate-900 rounded-xl relative group min-h-[300px] map-print-container grid gap-4 transition-all duration-500 ${state.isComparisonMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`
+                bg-slate-900 rounded-xl relative group map-print-container grid gap-4 transition-all duration-500
+                w-full
+                /* Mobile: Fixed min-height to ensure map is usable */
+                min-h-[400px] h-auto
+                /* Desktop: Flex-1 to fill remaining space */
+                lg:h-auto lg:flex-1
+                /* Columns based on mode */
+                ${state.isComparisonMode ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}
+            `}>
                 
                 {/* Primary Map */}
-                <div className="relative h-full w-full">
+                <div className="relative w-full h-[400px] lg:h-full">
                    {isLoadingLive && (
                        <div className="absolute inset-0 z-50 bg-slate-950/60 flex items-center justify-center backdrop-blur-sm">
                            <Loader2 className="animate-spin text-indigo-500 w-8 h-8"/>
@@ -291,7 +303,7 @@ const App: React.FC = () => {
 
                 {/* Comparison Map */}
                 {state.isComparisonMode && (
-                  <div className="relative h-full w-full border-l-2 border-slate-700/50">
+                  <div className="relative w-full h-[400px] lg:h-full border-t-2 lg:border-t-0 lg:border-l-2 border-slate-700/50">
                     <MapVisualizer 
                       reservoir={selectedReservoir} 
                       data={comparisonData} 
@@ -380,7 +392,8 @@ const App: React.FC = () => {
           </div>
 
           {/* Right Column: AI & Charts (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-1">
+          {/* Mobile: Stacked, auto height. Desktop: Scrollable column. */}
+          <div className="lg:col-span-4 flex flex-col gap-6 h-auto lg:h-full lg:overflow-y-auto lg:pr-1">
             
             <AIInsights 
               analysis={aiAnalysis}
