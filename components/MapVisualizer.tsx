@@ -16,6 +16,7 @@ L.Icon.Default.mergeOptions({
 interface MapVisualizerProps {
   reservoir: Reservoir;
   data: SeasonalData;
+  label?: string; // Optional label for comparison mode
 }
 
 const isValidCoordinate = (coord: any): coord is [number, number] => {
@@ -35,7 +36,7 @@ const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
   return null;
 };
 
-const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data }) => {
+const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label }) => {
   
   // Guard against undefined/bad reservoir data
   const safeReservoirLocation = useMemo((): [number, number] => {
@@ -73,17 +74,44 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data }) => {
     return poly.filter(p => isValidCoordinate(p));
   }, [reservoir, data, safeReservoirLocation]);
 
-  const mapOptions = {
-      fillColor: '#3b82f6',
-      fillOpacity: 0.6,
-      color: '#2563eb',
+  const volumePercentage = useMemo(() => {
+    if (!data?.volume || !reservoir?.maxCapacity) return 0;
+    return (data.volume / reservoir.maxCapacity) * 100;
+  }, [data, reservoir]);
+
+  const mapOptions = useMemo(() => {
+    let fillColor, strokeColor;
+    
+    // Gradient: Lighter blues for low capacity, Darker/Deep blues for high capacity
+    if (volumePercentage >= 80) {
+      fillColor = '#1e40af'; // blue-800 (High Depth/Volume)
+      strokeColor = '#172554'; // blue-950
+    } else if (volumePercentage >= 60) {
+      fillColor = '#2563eb'; // blue-600
+      strokeColor = '#1e3a8a'; // blue-900
+    } else if (volumePercentage >= 40) {
+      fillColor = '#3b82f6'; // blue-500
+      strokeColor = '#1d4ed8'; // blue-700
+    } else if (volumePercentage >= 20) {
+      fillColor = '#60a5fa'; // blue-400
+      strokeColor = '#2563eb'; // blue-600
+    } else {
+      fillColor = '#93c5fd'; // blue-300 (Shallow)
+      strokeColor = '#3b82f6'; // blue-500
+    }
+
+    return {
+      fillColor,
+      fillOpacity: 0.65,
+      color: strokeColor,
       weight: 2
-  };
+    };
+  }, [volumePercentage]);
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl relative">
       <MapContainer 
-        key={reservoir?.id || 'default-map'} 
+        key={`${reservoir?.id}-${data?.year}-${data?.season}`} 
         center={safeReservoirLocation} 
         zoom={12} 
         style={{ height: '100%', width: '100%', background: '#0f172a' }}
@@ -121,6 +149,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data }) => {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                    <span>Water Area:</span> <span className="font-mono">{data?.surfaceArea} km²</span>
                    <span>Volume:</span> <span className="font-mono">{data?.volume} MCM</span>
+                   <span>Capacity:</span> <span className="font-mono">{Math.round(volumePercentage)}%</span>
                    <span>Level:</span> <span className="font-mono">{data?.waterLevel} m</span>
                 </div>
               </div>
@@ -151,6 +180,11 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data }) => {
       
       {/* Overlay Info */}
       <div className="absolute top-4 left-14 z-[400] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden">
+         {label && (
+             <div className="mb-2 pb-2 border-b border-slate-700">
+                 <h4 className="font-bold text-white uppercase tracking-wider">{label}</h4>
+             </div>
+         )}
          <h4 className="font-bold text-sky-400 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
@@ -160,7 +194,16 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data }) => {
          </h4>
          <p className="text-slate-300 mt-1">Source: Sentinel-2 (L2A)</p>
          <p className="text-slate-300">Band Combination: NDWI</p>
-         <p className="text-slate-400 mt-1 italic">Updated: 4 hours ago</p>
+         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-700">
+            <div className="flex flex-col gap-1 w-full">
+                <span className="text-[10px] text-slate-400">Water Intensity Index</span>
+                <div className="h-1.5 w-full bg-gradient-to-r from-blue-300 via-blue-500 to-blue-900 rounded-full"></div>
+                <div className="flex justify-between text-[8px] text-slate-500">
+                   <span>Low</span>
+                   <span>High</span>
+                </div>
+            </div>
+         </div>
       </div>
     </div>
   );

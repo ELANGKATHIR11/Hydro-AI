@@ -13,7 +13,10 @@ const App: React.FC = () => {
   const [state, setState] = useState<SimulationState>({
     selectedReservoirId: RESERVOIRS[0].id,
     year: 2024,
-    season: 'Post-Monsoon'
+    season: 'Post-Monsoon',
+    isComparisonMode: false,
+    compareYear: 2023,
+    compareSeason: 'Post-Monsoon'
   });
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
@@ -27,9 +30,15 @@ const App: React.FC = () => {
     getHistoricalData(selectedReservoir.id), 
   [selectedReservoir.id]);
 
+  // Primary Data (Left Map)
   const currentData = useMemo(() => 
     historicalData.find(d => d.year === state.year && d.season === state.season) || historicalData[0],
   [historicalData, state.year, state.season]);
+
+  // Comparison Data (Right Map)
+  const comparisonData = useMemo(() => 
+    historicalData.find(d => d.year === state.compareYear && d.season === state.compareSeason) || historicalData[0],
+  [historicalData, state.compareYear, state.compareSeason]);
 
   const availableYears = Array.from(new Set(historicalData.map(d => d.year))).sort();
   const availableSeasons = ['Winter', 'Summer', 'Monsoon', 'Post-Monsoon'] as const;
@@ -147,9 +156,37 @@ const App: React.FC = () => {
           
           {/* Left Column: Map & Key Stats (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6 h-full">
-            {/* Map Container */}
-            <div className="flex-1 bg-slate-900 rounded-xl relative group min-h-[300px] map-print-container">
-                <MapVisualizer reservoir={selectedReservoir} data={currentData} />
+            
+            {/* Map Container - Toggles between Grid and Flex based on mode */}
+            <div className={`flex-1 bg-slate-900 rounded-xl relative group min-h-[300px] map-print-container grid gap-4 transition-all duration-500 ${state.isComparisonMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                
+                {/* Primary Map */}
+                <div className="relative h-full w-full">
+                   <MapVisualizer 
+                      reservoir={selectedReservoir} 
+                      data={currentData} 
+                      label={state.isComparisonMode ? `${state.season} ${state.year} (Primary)` : undefined}
+                   />
+                </div>
+
+                {/* Comparison Map */}
+                {state.isComparisonMode && (
+                  <div className="relative h-full w-full border-l-2 border-slate-700/50">
+                    <MapVisualizer 
+                      reservoir={selectedReservoir} 
+                      data={comparisonData} 
+                      label={`${state.compareSeason} ${state.compareYear} (Comparison)`}
+                    />
+                    {/* Floating Close Button for quick exit */}
+                    <button 
+                       onClick={() => handleStateChange({ isComparisonMode: false })}
+                       className="absolute top-2 right-2 z-[500] bg-slate-800 text-slate-300 p-1 rounded-full hover:bg-slate-700 shadow-lg"
+                       title="Exit Comparison"
+                    >
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                  </div>
+                )}
             </div>
 
             {/* Quick Stats Strip */}
