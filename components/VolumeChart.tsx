@@ -92,10 +92,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ data, forecast, maxCapacity }
       {/* Tab Header - Fixed Height part */}
       <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-2 flex-shrink-0">
         <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
-            {view === 'series' && <Activity size={16}/>}
-            {view === 'correlation' && <TrendingUp size={16}/>}
-            {view === 'table' && <Table size={16}/>}
-            
+            {view === 'series' && <Activity size={16}/>}\n            {view === 'correlation' && <TrendingUp size={16}/>}\n            {view === 'table' && <Table size={16}/>}\n            
             {view === 'series' && "Historical Trends & Forecast"}
             {view === 'correlation' && "Rainfall-Volume Correlation"}
             {view === 'table' && "Raw Hydrological Data"}
