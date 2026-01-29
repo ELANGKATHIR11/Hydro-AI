@@ -116,5 +116,62 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
                   isPlaying 
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/50'
-                }`} 
-The comment was truncated to fit the tool's input size; continuing in the next request.
+                }`}>
+                {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                {isPlaying ? "Pause Time-Lapse" : "Play Time-Lapse"}
+              </button>
+
+              {/* Comparison Toggle */}
+              <button 
+                onClick={toggleComparison}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all ${
+                  state.isComparisonMode 
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 hover:bg-purple-500/30' 
+                  : 'bg-slate-700 text-slate-300 border border-transparent hover:bg-slate-600'
+                }`}
+              >
+                {state.isComparisonMode ? <X size={14} /> : <GitCompare size={14} />}
+                {state.isComparisonMode ? "Exit Compare" : "Compare"}
+              </button>
+          </div>
+        </div>
+
+        {/* Date Controls */}
+        <div className={`flex-1 grid gap-4 transition-all ${state.isComparisonMode ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+           
+           {/* Primary Controls */}
+           <DateSelector 
+              label="Primary View (Left Map)"
+              year={state.year}
+              season={state.season}
+              onYearChange={(y) => onChange({ year: y })}
+              onSeasonChange={(s) => onChange({ season: s })}
+              colorClass="bg-slate-800/50 border-slate-700"
+           />
+
+           {/* Comparison Controls (Conditional) */}
+           {state.isComparisonMode && (
+             <DateSelector 
+                label="Comparison View (Right Map)"
+                year={state.compareYear}
+                season={state.compareSeason}
+                onYearChange={(y) => onChange({ compareYear: y })}
+                onSeasonChange={(s) => onChange({ compareSeason: s })}
+                colorClass="bg-purple-900/10 border-purple-500/30 relative"
+             />
+           )}
+           
+           {!state.isComparisonMode && (
+              <div className="hidden md:flex flex-col items-center justify-center border border-dashed border-slate-700 rounded-lg text-slate-500 text-xs">
+                 <ArrowRightLeft size={24} className="mb-2 opacity-50"/>
+                 Enable Comparison Mode to view historical changes side-by-side
+              </div>
+           )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardControls;
