@@ -42,3 +42,7 @@ api_response.json
 # Geodatabase folders (Esri File Geodatabases)
 *.gdb/
 *.gdb
+
+# Large local artifacts
+hydro_feedback.db
+hydro_model.pkl
