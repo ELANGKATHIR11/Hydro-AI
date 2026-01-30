@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { MLMetricsResponse } from '../types';
+import { MLMetricsResponse, ModelMetric } from '../types';
 import { BrainCircuit, RefreshCw, Server, Activity, CheckCircle2 } from 'lucide-react';
 
 const MLStatusPanel: React.FC = () => {
@@ -62,7 +62,7 @@ const MLStatusPanel: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-2">
-                {Object.entries(metrics).map(([name, metric]) => (
+                {Object.entries(metrics).map(([name, metric]: [string, ModelMetric]) => (
                     <div key={name} className="flex items-center justify-between bg-slate-950/50 p-2 rounded border border-slate-800/50">
                         <div className="flex flex-col">
                             <span className="text-xs font-bold text-slate-300">{name}</span>

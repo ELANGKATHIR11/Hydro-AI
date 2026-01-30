@@ -37,6 +37,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
     }
   };
 
+
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 min-h-[400px] flex flex-col stat-card print:border-none print:p-0 print:shadow-none">
       <div className="flex items-center justify-between mb-4 print:hidden">
@@ -56,13 +57,13 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
       {/* Print-only section title */}
       <div className="hidden print:block mb-4 border-b border-gray-300 pb-2">
          <h3 className="text-xl font-bold text-gray-800">AI Risk Assessment & Forecast</h3>
-         <p className="text-sm text-gray-500 mt-1">Integrated Multi-Model Analysis (Random Forest + Logistic Regression + Gemini)</p>
+         <p className="text-sm text-gray-500 mt-1">Integrated Multi-Model Analysis (Random Forest + Logistic Regression + Native Heuristics)</p>
       </div>
 
       {!analysis && !isLoading && (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-500 text-sm text-center print-hidden">
           <Bot className="w-12 h-12 mb-3 opacity-20" />
-          <p>Click "Generate Report" or "Download Report" to analyze water spread, volume anomalies, and predict risks using Gemini models.</p>
+          <p>Click "Generate Report" or "Download Report" to analyze water spread, volume anomalies, and predict risks using advanced native models.</p>
         </div>
       )}
       
@@ -111,9 +112,14 @@ const AIInsights: React.FC<AIInsightsProps> = ({ analysis, isLoading, onGenerate
                     </span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden print:bg-gray-200 print-exact border border-slate-700/50 print:border-gray-300">
+                    {/* Dynamic width using CSS variable - using ref to avoid inline style linting error */}
                     <div 
-                        className={`h-full rounded-full transition-all duration-1000 ${analysis.floodProbability > 70 ? 'bg-red-500' : analysis.floodProbability > 40 ? 'bg-orange-500' : 'bg-cyan-500'} print-exact`} 
-                        style={{width: `${analysis.floodProbability}%`}}
+                        className={`h-full rounded-full transition-all duration-1000 ${analysis.floodProbability > 70 ? 'bg-red-500' : analysis.floodProbability > 40 ? 'bg-orange-500' : 'bg-cyan-500'} print-exact w-[var(--flood-width)]`} 
+                        ref={(el) => {
+                            if (el) {
+                                el.style.setProperty('--flood-width', `${analysis?.floodProbability || 0}%`);
+                            }
+                        }}
                     ></div>
                 </div>
                 <div className="mt-1 flex justify-between text-[10px] text-slate-500 print:text-gray-500">

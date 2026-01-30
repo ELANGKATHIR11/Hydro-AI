@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+
+# Build / dependency folders
+node_modules
+dist
+
+# Local data and caches
+data_cache/
+api_response.json
+
+# Geodatabase folders (Esri File Geodatabases)
+*.gdb/
+*.gdb

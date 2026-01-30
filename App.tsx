@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { RESERVOIRS, getHistoricalData } from './services/mockData';
 import { SimulationState, AIAnalysisResult, SeasonalData } from './types';
-import { generateHydrologicalReport } from './services/geminiService';
+import { generateHydrologicalReport } from './services/reportService';
 import { api } from './services/api';
 import MapVisualizer from './components/MapVisualizer';
 import VolumeChart from './components/VolumeChart';
@@ -10,14 +10,9 @@ import DashboardControls from './components/DashboardControls';
 import ModelFeedback from './components/ModelFeedback';
 import HydroChat from './components/HydroChat';
 import MLStatusPanel from './components/MLStatusPanel';
-import ScenarioAnalysisPage from './components/ScenarioAnalysisPage';
-import Reservoir3D from './components/Reservoir3D';
-import { useSensorStream } from './hooks/useSensorStream';
-import LandingPage from './components/LandingPage';
-import { Waves, BarChart3, Info, Download, Mountain, Timer, Loader2, Wifi, WifiOff, FileText, Zap, Box } from 'lucide-react';
+import { Waves, BarChart3, Info, Download, Mountain, Timer, Loader2, Wifi, WifiOff, FileText } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [showLanding, setShowLanding] = useState(true);
   const [state, setState] = useState<SimulationState>({
     selectedReservoirId: RESERVOIRS[0].id,
     year: 2024,
@@ -27,16 +22,11 @@ const App: React.FC = () => {
     compareSeason: 'Post-Monsoon'
   });
 
-  // ... (existing state) ...
-
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [backendStatus, setBackendStatus] = useState<'online'|'offline'>('online');
   const [isPlaying, setIsPlaying] = useState(false);
   
-  const [viewMode, setViewMode] = useState<'dashboard' | 'god_mode' | '3d'>('dashboard');
-  const { data: streamData, isConnected: isStreamConnected } = useSensorStream('ws://localhost:8000/ws/sensors');
-
   // Real-time fetched data state
   const [liveData, setLiveData] = useState<Partial<SeasonalData> | null>(null);
   const [mlForecast, setMlForecast] = useState<number | null>(null);
@@ -213,10 +203,6 @@ const App: React.FC = () => {
     }
   };
 
-  if (showLanding) {
-    return <LandingPage onEnter={() => setShowLanding(false)} />;
-  }
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 pb-16 lg:pb-0">
       
@@ -232,29 +218,6 @@ const App: React.FC = () => {
               <p className="text-xs text-slate-400">Tamil Nadu Reservoir Monitor</p>
             </div>
           </div>
-          
-          {/* Navigation Controls */}
-          <div className="flex bg-slate-800/50 p-1 rounded-lg border border-slate-700 mx-4">
-               <button 
-                  onClick={() => setViewMode('dashboard')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
-               >
-                  Dashboard
-               </button>
-               <button 
-                  onClick={() => setViewMode('god_mode')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'god_mode' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-500/20' : 'text-slate-400 hover:text-slate-200'}`}
-               >
-                  <Zap size={12} /> God Mode
-               </button>
-                <button 
-                  onClick={() => setViewMode('3d')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === '3d' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-slate-200'}`}
-               >
-                  <Box size={12} /> 3D Monitor
-               </button>
-          </div>
-
           <div className="flex items-center gap-4">
              <div className={`hidden md:flex items-center gap-4 text-xs font-medium ${backendStatus === 'online' ? 'text-green-500' : 'text-orange-500'}`}>
                 <span className="flex items-center gap-1">
@@ -280,8 +243,6 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
-        {viewMode === 'dashboard' && (
-          <>
         
         {/* Print Only Header */}
         <div className="hidden print:block mb-8 border-b border-gray-300 pb-4">
@@ -321,7 +282,7 @@ const App: React.FC = () => {
             <div className={`
                 bg-slate-900 rounded-xl relative group map-print-container grid gap-4 transition-all duration-500
                 w-full
-                min-h-[500px] lg:min-h-[600px] h-auto
+                min-h-[500px] lg:min-h-[750px] h-auto
                 /* Columns based on mode */
                 ${state.isComparisonMode ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}
             `}>
@@ -352,9 +313,9 @@ const App: React.FC = () => {
                     />
                     <button 
                        onClick={() => handleStateChange({ isComparisonMode: false })}
-                       className="absolute top-2 right-2 z-500 bg-slate-800 text-slate-300 p-1 rounded-full hover:bg-slate-700 shadow-lg"
-                       aria-label="Close Comparison Mode"
-                       title="Close Comparison Mode"
+                       className="absolute top-2 right-2 z-[500] bg-slate-800 text-slate-300 p-1 rounded-full hover:bg-slate-700 shadow-lg"
+                       title="Close Comparison View"
+                       aria-label="Close Comparison View"
                     >
                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
@@ -376,12 +337,12 @@ const App: React.FC = () => {
                  sub={backendStatus === 'online' ? "Real-time GEE L2A" : "Simulated NDWI"}
                  icon={<Waves size={14} className="text-blue-400"/>}
                />
-               <StatCard 
-                 label="Storage Vol" 
-                 value={`${currentData.volume} MCM`} 
-                 sub={`${Math.round((currentData.volume/selectedReservoir.maxCapacity)*100)}% Capacity`}
-                 trend="neutral"
-               />
+                <StatCard 
+                  label="Storage Vol" 
+                  value={`${currentData.volume} MCM`} 
+                  sub={`${Math.round((currentData.volume/selectedReservoir.maxCapacity)*100)}% Capacity`}
+                  trend={(currentData.volume / selectedReservoir.maxCapacity) > 0.7 ? 'up' : 'neutral'}
+                />
                 <StatCard 
                  label="Rainfall" 
                  value={`${currentData.rainfall} mm`} 
@@ -400,7 +361,7 @@ const App: React.FC = () => {
                  {/* Description Section */}
                  <div className="mb-4 bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
                     <div className="flex items-start gap-2">
-                        <FileText size={14} className="text-slate-500 mt-0.5 shrink-0" />
+                        <FileText size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
                         <p className="text-sm text-slate-400 italic leading-relaxed">
                             {selectedReservoir.description}
                         </p>
@@ -461,32 +422,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Floating Chatbot */}
-        <HydroChat reservoir={selectedReservoir} currentData={currentData} aiAnalysis={aiAnalysis} />
-          </>
-        )}
-
-        {viewMode === 'god_mode' && <ScenarioAnalysisPage />}
-
-        {viewMode === '3d' && (
-           <div className="h-[calc(100vh-100px)] relative bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-              <Reservoir3D waterLevel={streamData?.water_level || 50} />
-              <div className="absolute bottom-6 left-6 bg-slate-950/90 p-4 rounded-xl border border-slate-700 text-xs font-mono backdrop-blur-md shadow-2xl">
-                  <div className="flex items-center gap-2 mb-3 text-cyan-400 font-bold uppercase tracking-wider border-b border-slate-800 pb-2">
-                      <Zap size={14}/> Live Digital Twin
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                      <span className="text-slate-500">Inflow:</span>
-                      <span className="text-right text-slate-200 font-bold">{streamData?.inflow || 0} m³/s</span>
-                      <span className="text-slate-500">Level:</span>
-                      <span className="text-right text-cyan-400 font-bold">{streamData?.water_level || 0} m</span>
-                      <span className="text-slate-500">Status:</span>
-                      <span className={`text-right font-bold ${streamData?.alert_status === 'WARNING' ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
-                          {streamData?.alert_status || 'OFFLINE'}
-                      </span>
-                  </div>
-              </div>
-           </div>
-        )}
+        <HydroChat reservoir={selectedReservoir} currentData={currentData} />
       </main>
     </div>
   );

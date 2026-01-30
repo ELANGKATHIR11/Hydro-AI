@@ -1,16 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip, GeoJSON } from 'react-leaflet';
 import { Reservoir, SeasonalData } from '../types';
 import { generateWaterPolygon, getOfficialBoundaries } from '../services/mockData';
-import { Layers, Map as MapIcon, Database } from 'lucide-react';
-import * as L from 'leaflet';
-// Import GeoJSON component from react-leaflet to support raw GeoJSON
-import { GeoJSON as LeafletGeoJSON } from 'react-leaflet';
-// Monkey patch for React-Leaflet GeoJSON if needed or just use L.GeoJSON logic? 
-// React-Leaflet v4+ exposes GeoJSON component. Let's try direct import.
-// Actually, `MapContainer` exports usually include GeoJSON.
-// Let's check imports.
-
+import { Layers, Map as MapIcon } from 'lucide-react';
+import L from 'leaflet';
 
 // Fix for default Leaflet icons in React
 // @ts-ignore
@@ -51,21 +44,25 @@ const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
 const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, isLive = false }) => {
   const [layerOpacity, setLayerOpacity] = useState(0.65);
   const [showBoundaries, setShowBoundaries] = useState(false);
-  
-  const [realBoundary, setRealBoundary] = useState<any>(null); // State for Real GeoJSON
-
-  // Fetch Real GDB Data
-  useEffect(() => {
-    fetch('/tank_boundary.geojson')
-      .then(res => res.json())
-      .then(data => {
-        console.log("Loaded Tank Boundary:", data);
-        setRealBoundary(data);
-      })
-      .catch(err => console.error("Failed to load tank boundary:", err));
-  }, []);
+  const [showGDBBoundary, setShowGDBBoundary] = useState(false);
+  const [showContours, setShowContours] = useState(false);
+  const [contourData, setContourData] = useState<any>(null);
+  const [boundaryData, setBoundaryData] = useState<any>(null);
   
   const officialBoundaries = useMemo(() => getOfficialBoundaries(), []);
+
+  useEffect(() => {
+    // Fetch GDB layers
+    fetch('http://localhost:8001/api/gdb/contour')
+        .then(res => res.json())
+        .then(data => setContourData(data))
+        .catch(err => console.error("Failed to load contours", err));
+
+    fetch('http://localhost:8001/api/gdb/TANK_BOUNDARY')
+        .then(res => res.json())
+        .then(data => setBoundaryData(data))
+        .catch(err => console.error("Failed to load tank boundary", err));
+  }, []);
 
   // Guard against undefined/bad reservoir data with strict fallback
   const safeReservoirLocation = useMemo((): [number, number] => {
@@ -189,32 +186,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
           </Polygon>
         )}
         
-        {/* Official Boundaries Layer (Real GDB Data) */}
-        {showBoundaries && realBoundary && (
-             <React.Fragment>
-                {/* Render GeoJSON if available */}
-                <LeafletGeoJSON 
-                    data={realBoundary}
-                    style={{
-                        color: '#f97316', // Orange-500
-                        weight: 3,
-                        dashArray: '5, 10',
-                        fillOpacity: 0.1,
-                        fillColor: '#f97316'
-                    }}
-                >
-                     <Tooltip sticky direction="top">
-                        <div className="text-xs text-center">
-                            <strong className="text-orange-600 block mb-0.5">Real Tank Boundary (GDB)</strong>
-                            <span className="text-slate-700">Imported from Waterspread.gdb</span>
-                        </div>
-                    </Tooltip>
-                </LeafletGeoJSON>
-            </React.Fragment>
-        )}
-
-        {/* Fallback to Mock if Real not loaded (or if you want both) */}
-        {showBoundaries && !realBoundary && officialBoundaries.map(b => (
+        {/* Official Boundaries Layer */}
+        {showBoundaries && officialBoundaries.map(b => (
             <Polygon 
                 key={b.id} 
                 positions={b.coordinates}
@@ -254,10 +227,23 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
           </Marker>
         )}
 
+
+        {showContours && contourData && (
+            <GeoJSON 
+                data={contourData} 
+                style={{ color: '#3b82f6', weight: 1.5, opacity: 0.8 }} // Blue-500 for contours (User Preference)
+            />
+        )}
+        {showGDBBoundary && boundaryData && (
+            <GeoJSON 
+                data={boundaryData} 
+                style={{ color: '#ef4444', weight: 2, fill: false, dashArray: '5, 5' }} 
+            />
+        )}
       </MapContainer>
       
       {/* Overlay Info */}
-      <div className="absolute top-4 left-14 z-[400] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden w-64">
+      <div className="absolute top-4 left-14 z-400 bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden w-64">
          {label && (
              <div className="mb-2 pb-2 border-b border-slate-700">
                  <h4 className="font-bold text-white uppercase tracking-wider">{label}</h4>
@@ -285,8 +271,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
                 value={layerOpacity}
                 onChange={(e) => setLayerOpacity(parseFloat(e.target.value))}
                 className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                aria-label="Map Layer Opacity"
-                title="Adjust Layer Opacity"
+                aria-label="Layer Opacity"
              />
          </div>
 
@@ -295,9 +280,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
              <span className="flex items-center gap-1.5 font-medium"><MapIcon size={12} className="text-orange-400"/> Official Boundaries</span>
              <button 
                 onClick={() => setShowBoundaries(!showBoundaries)}
-                aria-label="Toggle Official Boundaries"
-                title="Toggle Official Boundaries"
                 className={`w-8 h-4 rounded-full transition-colors relative ${showBoundaries ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                aria-label="Toggle Official Boundaries"
              >
                 <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showBoundaries ? 'translate-x-4' : ''}`}></span>
              </button>
@@ -306,13 +290,40 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-700">
             <div className="flex flex-col gap-1 w-full">
                 <span className="text-[10px] text-slate-400">Water Intensity Index</span>
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-300 via-blue-500 to-blue-900 rounded-full"></div>
+                <div className="h-1.5 w-full bg-linear-to-r from-blue-300 via-blue-500 to-blue-900 rounded-full"></div>
                 <div className="flex justify-between text-[8px] text-slate-500">
                    <span>Low</span>
                    <span>High</span>
                 </div>
             </div>
          </div>
+
+         {/* GDB Layers Toggles */}
+         <div className="mt-3 pt-2 border-t border-slate-700">
+             <div className="flex items-center justify-between text-slate-300 mb-2">
+                 <span className="flex items-center gap-1.5 font-medium text-[10px]">Elevation Contours (DEM)</span>
+                 <button 
+                    onClick={() => setShowContours(!showContours)}
+                    className={`w-6 h-3 rounded-full transition-colors relative ${showContours ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                    aria-label="Toggle Elevation Contours"
+                 >
+                    <span className={`absolute top-0.5 left-0.5 w-2 h-2 bg-white rounded-full transition-transform ${showContours ? 'translate-x-3' : ''}`}></span>
+                 </button>
+             </div>
+             <div className="flex items-center justify-between text-slate-300">
+                 <span className="flex items-center gap-1.5 font-medium text-[10px]">Tank Boundary (GDB)</span>
+                 <button 
+                    onClick={() => setShowGDBBoundary(!showGDBBoundary)}
+                    className={`w-6 h-3 rounded-full transition-colors relative ${showGDBBoundary ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                    aria-label="Toggle Tank Boundary"
+                 >
+                    <span className={`absolute top-0.5 left-0.5 w-2 h-2 bg-white rounded-full transition-transform ${showGDBBoundary ? 'translate-x-3' : ''}`}></span>
+                 </button>
+             </div>
+         </div>
+
+        {/* GDB Layer Rendering */}
+
       </div>
     </div>
   );

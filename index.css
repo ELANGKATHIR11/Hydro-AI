@@ -1,14 +1,11 @@
 @import "tailwindcss";
 
-.error-boundary-container {
-  padding: 2rem;
-  color: #ff4444;
-  background: #1a1a1a;
-  height: 100vh;
-  font-family: monospace;
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
-.error-boundary-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
 }

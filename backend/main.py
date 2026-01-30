@@ -1,23 +1,20 @@
-from fastapi import (
-    FastAPI,
-    HTTPException,
-    Depends,
-    BackgroundTasks,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from dotenv import load_dotenv
+import geopandas as gpd
+import json
+import os
+
+load_dotenv()
+
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
-import asyncio
-import json
-import random
 
 # Relative imports
 from .satellite_engine import gee_service
 from .ml_models import ml_system, anomaly_model
-from .ai_engine import generate_gemini_report, AIAnalysisRequest
+from .ai_engine import generate_native_report, AIAnalysisRequest
 from .weather_service import get_real_weather
 from .database import init_db, get_db, FeedbackEntry
 
@@ -144,9 +141,9 @@ def check_anomaly(current_vol: float, historical_avg: float):
     return result
 
 
-@app.post("/api/gemini/analyze")
+@app.post("/api/native/analyze")
 async def analyze_reservoir(request: AIAnalysisRequest):
-    result = await generate_gemini_report(request)
+    result = await generate_native_report(request)
     return result
 
 
@@ -187,92 +184,36 @@ async def retrain_models(
         message = "Feedback stored and Model Retraining Triggered."
         retrain_info = new_metrics
 
+
+@app.get("/api/gdb/{layer_name}")
+def get_gdb_layer(layer_name: str):
+    """
+    Reads a vector layer from the User's GDB and returns it as GeoJSON.
+    Layers found: 'TANK_BOUNDARY', 'contour' (DEM).
+    """
+    gdb_path = "waterspread Detection.gdb"
+    if not os.path.exists(gdb_path):
+        raise HTTPException(status_code=404, detail="GDB file not found")
+
+    try:
+        # Check if layer exists (simplified check by just trying to read)
+        # Using fiona/geopandas to read specific layer
+        gdf = gpd.read_file(gdb_path, layer=layer_name)
+
+        # Ensure CRS is WGS84 (Lat/Lon) for Leaflet
+        if gdf.crs and gdf.crs.to_string() != "EPSG:4326":
+            gdf = gdf.to_crs(epsg=4326)
+
+        # Convert to GeoJSON string, then parse to dict to return as JSON
+        geojson_str = gdf.to_json()
+        return json.loads(geojson_str)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading layer: {str(e)}")
+
     return {"status": "success", "message": message, "new_metrics": retrain_info}
 
 
-# --- Real-Time Streaming ---
-class SensorSimulator:
-    def __init__(self):
-        self.water_level = 50.0
-        self.inflow = 100.0
-        self.outflow = 80.0
-        self.target_level = 50.0
-
-    async def get_next_reading(self):
-        # Physics-based drift
-        noise = random.uniform(-0.1, 0.1)
-        self.water_level += (self.inflow - self.outflow) * 0.001 + noise
-        self.water_level = max(0, min(100, self.water_level))
-
-        # Volatility
-        self.inflow += random.uniform(-5, 5)
-        self.outflow += random.uniform(-5, 5)
-
-        # Clamp
-        self.inflow = max(0, min(500, self.inflow))
-        self.outflow = max(0, min(500, self.outflow))
-
-        return {
-            "timestamp": "live",
-            "water_level": round(self.water_level, 2),
-            "inflow": round(self.inflow, 1),
-            "outflow": round(self.outflow, 1),
-            "alert_status": "NORMAL" if 20 < self.water_level < 80 else "WARNING",
-        }
-
-
-simulator = SensorSimulator()
-
-
-@app.websocket("/ws/sensors")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await simulator.get_next_reading()
-
-            # Run Live Inference via Neural Net (V2)
-            # We predict the FUTURE trend based on this packet
-            # (In a real app, this would use the ml_system's neural_net)
-
-            await websocket.send_json(data)
-            await asyncio.sleep(0.05)  # 20Hz refresh rate for smooth 3D animation
-    except WebSocketDisconnect:
-        print("Client disconnected")
-
-
-class GodModeRequest(BaseModel):
-    reservoir_id: str
-    rainfall_multiplier: float
-    temp_increase: float
-    years: int = 1
-    stable_mode: bool = False
-
-
-@app.post("/api/god_mode/simulate")
-def god_mode_simulation(request: GodModeRequest):
-    """
-    Runs the V2 Physics Engine for 'God Mode' scenarios.
-    Supports Time Lapse (up to 5 years) and Stable Mode.
-    """
-    simulation_data = ml_system.simulate_long_term(
-        years=request.years,
-        rainfall_multiplier=request.rainfall_multiplier,
-        temp_increase=request.temp_increase,
-        stable_mode=request.stable_mode,
-    )
-
-    # Calculate aggregate risk
-    max_flood_prob = max([m["flood_prob"] for m in simulation_data])
-    max_drought_prob = max([m["drought_prob"] for m in simulation_data])
-
-    return {
-        "simulation": simulation_data,
-        "summary": {
-            "max_flood_risk": max_flood_prob,
-            "max_drought_risk": max_drought_prob,
-            "years_projected": request.years,
-        },
-    }
-
+if __name__ == "__main__":
     import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
