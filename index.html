@@ -1,13 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HydroAI Geospatial Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
     <style>
       /* Leaflet container height fix */
       .leaflet-container {
@@ -21,14 +24,14 @@
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e293b; 
+        background: #1e293b;
       }
       ::-webkit-scrollbar-thumb {
-        background: #475569; 
+        background: #475569;
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
+        background: #64748b;
       }
 
       /* Print styles for PDF Export */
@@ -37,7 +40,7 @@
           size: A4 portrait;
           margin: 1.5cm;
         }
-        
+
         body {
           background-color: white !important;
           color: black !important;
@@ -52,43 +55,54 @@
         }
 
         /* Hide UI controls */
-        .print-hidden, 
-        header button, 
-        .leaflet-control-container, 
-        input, select, 
+        .print-hidden,
+        header button,
+        .leaflet-control-container,
+        input,
+        select,
         .print\:hidden {
           display: none !important;
         }
 
         /* Reset Layout for Document Flow */
-        .h-screen, .min-h-screen, .h-full {
+        .h-screen,
+        .min-h-screen,
+        .h-full {
           height: auto !important;
           min-height: 0 !important;
         }
-        
+
         .grid {
           display: block !important;
         }
-        
-        .lg\:col-span-8, .lg\:col-span-4 {
+
+        .lg\:col-span-8,
+        .lg\:col-span-4 {
           width: 100% !important;
           margin-bottom: 2rem;
         }
 
-        .overflow-y-auto, .overflow-hidden {
+        .overflow-y-auto,
+        .overflow-hidden {
           overflow: visible !important;
           height: auto !important;
         }
 
         /* Color Inversion for Paper */
-        .bg-slate-950, .bg-slate-900, .bg-slate-800 {
+        .bg-slate-950,
+        .bg-slate-900,
+        .bg-slate-800 {
           background-color: #fff !important;
           border-color: #ccc !important;
           color: #000 !important;
           box-shadow: none !important;
         }
-        
-        .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500 {
+
+        .text-slate-100,
+        .text-slate-200,
+        .text-slate-300,
+        .text-slate-400,
+        .text-slate-500 {
           color: #333 !important;
         }
 
@@ -105,7 +119,7 @@
           margin-bottom: 1rem;
           page-break-inside: avoid;
         }
-        
+
         .chart-print-container {
           height: 300px !important;
           page-break-inside: avoid;
@@ -126,22 +140,8 @@
         }
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react-leaflet": "https://esm.sh/react-leaflet@^5.0.0",
-    "leaflet": "https://esm.sh/leaflet@^1.9.4",
-    "axios": "https://esm.sh/axios@^1.13.4"
-  }
-}
-</script>
-</head>
+    <script type="module" src="/index.tsx"></script>
+  </head>
   <body class="bg-slate-950 text-slate-200">
     <div id="root"></div>
   </body>

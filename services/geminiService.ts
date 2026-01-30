@@ -36,7 +36,7 @@ export const generateHydrologicalReport = async (
       floodProbability: 0,
       droughtSeverity: 'Normal',
       forecast: 'Backend connection failed.',
-      summary: 'Unable to reach AI inference engine. Please check connection.',
+      summary: 'Unable to reach Native AI Engine. Please check backend connection.',
       recommendation: 'Use manual calculations.'
     };
   }

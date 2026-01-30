@@ -2,8 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip } from 'react-leaflet';
 import { Reservoir, SeasonalData } from '../types';
 import { generateWaterPolygon, getOfficialBoundaries } from '../services/mockData';
-import { Layers, Map as MapIcon } from 'lucide-react';
-import L from 'leaflet';
+import { Layers, Map as MapIcon, Database } from 'lucide-react';
+import * as L from 'leaflet';
+// Import GeoJSON component from react-leaflet to support raw GeoJSON
+import { GeoJSON as LeafletGeoJSON } from 'react-leaflet';
+// Monkey patch for React-Leaflet GeoJSON if needed or just use L.GeoJSON logic? 
+// React-Leaflet v4+ exposes GeoJSON component. Let's try direct import.
+// Actually, `MapContainer` exports usually include GeoJSON.
+// Let's check imports.
+
 
 // Fix for default Leaflet icons in React
 // @ts-ignore
@@ -44,6 +51,19 @@ const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
 const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, isLive = false }) => {
   const [layerOpacity, setLayerOpacity] = useState(0.65);
   const [showBoundaries, setShowBoundaries] = useState(false);
+  
+  const [realBoundary, setRealBoundary] = useState<any>(null); // State for Real GeoJSON
+
+  // Fetch Real GDB Data
+  useEffect(() => {
+    fetch('/tank_boundary.geojson')
+      .then(res => res.json())
+      .then(data => {
+        console.log("Loaded Tank Boundary:", data);
+        setRealBoundary(data);
+      })
+      .catch(err => console.error("Failed to load tank boundary:", err));
+  }, []);
   
   const officialBoundaries = useMemo(() => getOfficialBoundaries(), []);
 
@@ -169,8 +189,32 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
           </Polygon>
         )}
         
-        {/* Official Boundaries Layer */}
-        {showBoundaries && officialBoundaries.map(b => (
+        {/* Official Boundaries Layer (Real GDB Data) */}
+        {showBoundaries && realBoundary && (
+             <React.Fragment>
+                {/* Render GeoJSON if available */}
+                <LeafletGeoJSON 
+                    data={realBoundary}
+                    style={{
+                        color: '#f97316', // Orange-500
+                        weight: 3,
+                        dashArray: '5, 10',
+                        fillOpacity: 0.1,
+                        fillColor: '#f97316'
+                    }}
+                >
+                     <Tooltip sticky direction="top">
+                        <div className="text-xs text-center">
+                            <strong className="text-orange-600 block mb-0.5">Real Tank Boundary (GDB)</strong>
+                            <span className="text-slate-700">Imported from Waterspread.gdb</span>
+                        </div>
+                    </Tooltip>
+                </LeafletGeoJSON>
+            </React.Fragment>
+        )}
+
+        {/* Fallback to Mock if Real not loaded (or if you want both) */}
+        {showBoundaries && !realBoundary && officialBoundaries.map(b => (
             <Polygon 
                 key={b.id} 
                 positions={b.coordinates}
@@ -241,6 +285,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
                 value={layerOpacity}
                 onChange={(e) => setLayerOpacity(parseFloat(e.target.value))}
                 className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                aria-label="Map Layer Opacity"
+                title="Adjust Layer Opacity"
              />
          </div>
 
@@ -249,6 +295,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, i
              <span className="flex items-center gap-1.5 font-medium"><MapIcon size={12} className="text-orange-400"/> Official Boundaries</span>
              <button 
                 onClick={() => setShowBoundaries(!showBoundaries)}
+                aria-label="Toggle Official Boundaries"
+                title="Toggle Official Boundaries"
                 className={`w-8 h-4 rounded-full transition-colors relative ${showBoundaries ? 'bg-indigo-600' : 'bg-slate-700'}`}
              >
                 <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showBoundaries ? 'translate-x-4' : ''}`}></span>
