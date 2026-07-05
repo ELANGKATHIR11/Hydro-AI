@@ -7,3 +7,11 @@ date,reservoir_id,water_spread_area_km2,storage_volume_m3,volume_mcm,provenance
 2026-07-05T15:31:18.751430,res-cholavaram,5.51,12014887.6,12.015,model_random_forest
 2026-07-05T15:31:38.535971,res-cholavaram,5.6,12628832.1,12.629,model_random_forest
 2026-07-05T15:44:07.577572,res-chembarambakkam,17.78,60292243.61,60.292,model_random_forest
+2026-07-05T16:06:52.641835,res-chembarambakkam,16.51,53678660.19,53.679,model_random_forest
+2026-07-05T16:09:07.618134,res-chembarambakkam,22.15,89815723.85,89.816,model_random_forest
+2026-07-05T16:09:07.651799,res-cholavaram,6.18,22112180.63,22.112,model_random_forest
+2026-07-05T16:09:07.674567,res-veeranam,9.2,35434692.5,35.435,model_random_forest
+2026-07-05T16:09:07.691742,res-poondi,18.22,70893747.99,70.894,model_random_forest
+2026-07-05T16:09:07.705851,res-redhills,23.25,93692633.46,93.693,model_random_forest
+2026-07-05T16:09:07.716302,res-kaveripakkam,9.72,35286721.47,35.287,model_random_forest
+2026-07-05T16:09:40.364582,res-redhills,16.75,54871423.4,54.871,model_random_forest
