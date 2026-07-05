@@ -106,3 +106,43 @@ CREATE TABLE processing_runs (
     status VARCHAR(50) NOT NULL,
     logs TEXT
 );
+
+-- 8. Water Quality Observations
+CREATE TABLE water_quality_observations (
+    id SERIAL PRIMARY KEY,
+    water_body_id VARCHAR(100) REFERENCES water_bodies(id) ON DELETE CASCADE,
+    observation_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    do_mg_l DOUBLE PRECISION CHECK (do_mg_l >= 0.0),
+    bod_mg_l DOUBLE PRECISION CHECK (bod_mg_l >= 0.0),
+    cod_mg_l DOUBLE PRECISION CHECK (cod_mg_l >= 0.0),
+    nitrates_mg_l DOUBLE PRECISION CHECK (nitrates_mg_l >= 0.0),
+    phosphates_mg_l DOUBLE PRECISION CHECK (phosphates_mg_l >= 0.0),
+    heavy_metals JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_wq_water_body_date ON water_quality_observations(water_body_id, observation_date);
+
+-- 9. Feature Runs
+CREATE TABLE feature_runs (
+    id SERIAL PRIMARY KEY,
+    run_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    feature_name VARCHAR(100) NOT NULL,
+    config JSONB,
+    input_rasters TEXT[],
+    output_path TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. Training Datasets
+CREATE TABLE training_datasets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    version VARCHAR(50) NOT NULL,
+    features_path TEXT NOT NULL,
+    labels_path TEXT NOT NULL,
+    split_ratio JSONB,
+    checksum VARCHAR(64),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+

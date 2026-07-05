@@ -1,0 +1,14 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="3.28.0-Firenze" projectname="Hydro-AI Digital Twin">
+  <homePath path=""/>
+  <title>Hydro-AI Water-Body Digital Twin Project</title>
+  <projectlayers>
+    <!-- Placeholder for vector boundary layer -->
+    <maplayer autoPublishDiagrams="0" maxScale="0" minScale="1e+08" styleCategories="AllStyleCategories" type="vector">
+      <id>aoi_boundaries</id>
+      <datasource>../data/raw/boundaries/aoi.geojson</datasource>
+      <layername>AOI Boundaries</layername>
+      <provider encoding="UTF-8">ogr</provider>
+    </maplayer>
+  </projectlayers>
+</qgis>
