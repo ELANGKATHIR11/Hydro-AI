@@ -15,3 +15,4 @@ date,reservoir_id,water_spread_area_km2,storage_volume_m3,volume_mcm,provenance
 2026-07-05T16:09:07.705851,res-redhills,23.25,93692633.46,93.693,model_random_forest
 2026-07-05T16:09:07.716302,res-kaveripakkam,9.72,35286721.47,35.287,model_random_forest
 2026-07-05T16:09:40.364582,res-redhills,16.75,54871423.4,54.871,model_random_forest
+2026-07-05T16:23:21.597367,res-chembarambakkam,17.11,55634814.65,55.635,model_random_forest
