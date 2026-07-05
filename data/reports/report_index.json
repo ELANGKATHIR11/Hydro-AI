@@ -1,0 +1,20 @@
+[
+  {
+    "report_id": "res-poondi_20260309T144531",
+    "created_at": "2026-03-09T14:45:31.744886",
+    "reservoir_id": "res-poondi",
+    "reservoir_name": "Poondi Reservoir",
+    "pdf": "res-poondi_20260309T144531.pdf",
+    "csv": "res-poondi_20260309T144531.csv",
+    "geojson": "res-poondi_20260309T144531.geojson"
+  },
+  {
+    "report_id": "res-chembarambakkam_20260309T150301",
+    "created_at": "2026-03-09T15:03:01.164748",
+    "reservoir_id": "res-chembarambakkam",
+    "reservoir_name": "Chembarambakkam",
+    "pdf": "res-chembarambakkam_20260309T150301.pdf",
+    "csv": "res-chembarambakkam_20260309T150301.csv",
+    "geojson": "res-chembarambakkam_20260309T150301.geojson"
+  }
+]

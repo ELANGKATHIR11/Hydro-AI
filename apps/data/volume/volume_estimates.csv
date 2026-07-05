@@ -1,0 +1,8 @@
+date,reservoir_id,water_spread_area_km2,storage_volume_m3,volume_mcm,provenance
+2026-07-05T15:27:32.457730,res-chembarambakkam,14.34,44299187.22,44.299,model_random_forest
+2026-07-05T15:27:32.486951,res-chembarambakkam,15.85,51227836.36,51.228,model_random_forest
+2026-07-05T15:29:09.491699,res-chembarambakkam,21.09,75900228.58,75.9,model_random_forest
+2026-07-05T15:30:52.510023,res-chembarambakkam,17.01,55640123.21,55.64,model_random_forest
+2026-07-05T15:30:52.553964,res-chembarambakkam,21.45,76446433.94,76.446,model_random_forest
+2026-07-05T15:31:18.751430,res-cholavaram,5.51,12014887.6,12.015,model_random_forest
+2026-07-05T15:31:38.535971,res-cholavaram,5.6,12628832.1,12.629,model_random_forest

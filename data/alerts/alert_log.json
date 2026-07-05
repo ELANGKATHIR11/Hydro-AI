@@ -1,0 +1,170 @@
+[
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3868,
+    "hybrid_drought": 0.3868,
+    "eif_score": 0.9667,
+    "timestamp": "2026-03-09T13:46:57.457483"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3898,
+    "hybrid_drought": 0.4028,
+    "eif_score": 0.9675,
+    "timestamp": "2026-03-09T13:47:26.210412"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.388,
+    "hybrid_drought": 0.3926,
+    "eif_score": 0.9669,
+    "timestamp": "2026-03-09T14:44:08.274342"
+  },
+  {
+    "reservoir_id": "res-poondi",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3893,
+    "hybrid_drought": 0.3967,
+    "eif_score": 0.9697,
+    "timestamp": "2026-03-09T14:44:43.007999"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3898,
+    "hybrid_drought": 0.3956,
+    "eif_score": 0.9714,
+    "timestamp": "2026-03-10T06:58:00.847292"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3885,
+    "hybrid_drought": 0.41,
+    "eif_score": 0.9615,
+    "timestamp": "2026-03-10T06:58:16.600863"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3908,
+    "hybrid_drought": 0.3909,
+    "eif_score": 0.9618,
+    "timestamp": "2026-03-10T06:58:24.566250"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3905,
+    "hybrid_drought": 0.4036,
+    "eif_score": 0.9702,
+    "timestamp": "2026-03-10T07:27:14.524550"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3903,
+    "hybrid_drought": 0.4015,
+    "eif_score": 0.9705,
+    "timestamp": "2026-03-10T07:27:24.829567"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3896,
+    "hybrid_drought": 0.3944,
+    "eif_score": 0.9697,
+    "timestamp": "2026-03-10T07:31:28.298670"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3894,
+    "hybrid_drought": 0.4057,
+    "eif_score": 0.9655,
+    "timestamp": "2026-03-10T07:32:09.136368"
+  },
+  {
+    "reservoir_id": "res-veeranam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3869,
+    "hybrid_drought": 0.4027,
+    "eif_score": 0.9612,
+    "timestamp": "2026-03-10T07:33:18.702537"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3901,
+    "hybrid_drought": 0.3904,
+    "eif_score": 0.9689,
+    "timestamp": "2026-03-10T07:33:26.904703"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3907,
+    "hybrid_drought": 0.3912,
+    "eif_score": 0.9698,
+    "timestamp": "2026-03-10T07:37:38.650370"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3899,
+    "hybrid_drought": 0.3955,
+    "eif_score": 0.9717,
+    "timestamp": "2026-03-10T07:44:01.555638"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3903,
+    "hybrid_drought": 0.3906,
+    "eif_score": 0.9689,
+    "timestamp": "2026-03-10T07:59:17.723472"
+  },
+  {
+    "reservoir_id": "res-chembarambakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.389,
+    "hybrid_drought": 0.3939,
+    "eif_score": 0.9695,
+    "timestamp": "2026-03-11T08:40:02.768446"
+  },
+  {
+    "reservoir_id": "res-cholavaram",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3862,
+    "hybrid_drought": 0.4021,
+    "eif_score": 0.9606,
+    "timestamp": "2026-03-11T08:41:29.271598"
+  },
+  {
+    "reservoir_id": "res-poondi",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3897,
+    "hybrid_drought": 0.3964,
+    "eif_score": 0.9707,
+    "timestamp": "2026-03-11T08:41:35.889040"
+  },
+  {
+    "reservoir_id": "res-redhills",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3889,
+    "hybrid_drought": 0.3932,
+    "eif_score": 0.9698,
+    "timestamp": "2026-03-11T08:41:42.138156"
+  },
+  {
+    "reservoir_id": "res-kaveripakkam",
+    "alert": "ANOMALY",
+    "hybrid_flood": 0.3877,
+    "hybrid_drought": 0.4108,
+    "eif_score": 0.9612,
+    "timestamp": "2026-03-11T08:41:47.014758"
+  }
+]

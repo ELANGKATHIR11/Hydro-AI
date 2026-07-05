@@ -1,0 +1,63 @@
+{
+  "res-chembarambakkam": {
+    "feature_index": 0,
+    "source": "synthetic",
+    "strategy": "cached_mapping",
+    "scores": {
+      "attribute": 1.0,
+      "area_fit": 1.0,
+      "dem_overlap": 0.0,
+      "total": 1.0
+    }
+  },
+  "res-cholavaram": {
+    "feature_index": 1,
+    "source": "synthetic",
+    "strategy": "reservoir_id_exact",
+    "scores": {
+      "attribute": 1.0,
+      "area_fit": 1.0,
+      "dem_overlap": 1.0,
+      "total": 1.0
+    }
+  },
+  "res-veeranam": {
+    "feature_index": 2,
+    "source": "synthetic",
+    "strategy": "reservoir_id_exact",
+    "scores": {
+      "attribute": 1.0,
+      "area_fit": 1.0,
+      "dem_overlap": 1.0,
+      "total": 1.0
+    }
+  },
+  "res-poondi": {
+    "feature_index": 0,
+    "source": "synthetic",
+    "strategy": "manual_override",
+    "scores": {}
+  },
+  "res-redhills": {
+    "feature_index": 4,
+    "source": "synthetic",
+    "strategy": "reservoir_id_exact",
+    "scores": {
+      "attribute": 1.0,
+      "area_fit": 1.0,
+      "dem_overlap": 1.0,
+      "total": 1.0
+    }
+  },
+  "res-kaveripakkam": {
+    "feature_index": 5,
+    "source": "synthetic",
+    "strategy": "reservoir_id_exact",
+    "scores": {
+      "attribute": 1.0,
+      "area_fit": 1.0,
+      "dem_overlap": 1.0,
+      "total": 1.0
+    }
+  }
+}
