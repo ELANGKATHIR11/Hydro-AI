@@ -9,7 +9,7 @@ class AIAnalysisRequest(BaseModel):
     rainfall_anomaly: float
     season: str
 
-async def generate_gemini_report(data: AIAnalysisRequest):
+async def generate_local_report(data: AIAnalysisRequest):
     flood_prob = risk_system.assess_flood_risk(data.current_volume, data.max_capacity, data.season)
     drought_severity = risk_system.assess_drought_severity(data.rainfall_anomaly)
     

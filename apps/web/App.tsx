@@ -6,7 +6,7 @@ import { api } from './services/api';
 import MapVisualizer from './components/MapVisualizer';
 import DashboardControls from './components/DashboardControls';
 import HydroChat from './components/HydroChat';
-import GodMode from './components/GodMode';
+import TwinScenarioSimulator from './components/TwinScenarioSimulator';
 import Bathymetry3DView from './components/Bathymetry3DView';
 import SeasonalComparisonChart from './components/SeasonalComparisonChart';
 import { getActivePanels } from './services/panelRegistry';
@@ -14,7 +14,7 @@ import { Waves, BarChart3, Info, Download, Mountain, Timer, Loader2, Wifi, WifiO
 import LakesOverviewPanel from './components/LakesOverviewPanel';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'lakes' | 'bathymetry3d' | 'godmode'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'lakes' | 'bathymetry3d' | 'simulator'>('dashboard');
   const [state, setState] = useState<SimulationState>({
     selectedReservoirId: RESERVOIRS[0].id,
     year: 2024,
@@ -370,15 +370,15 @@ const App: React.FC = () => {
               All Lakes
             </button>
             <button
-              onClick={() => setActiveTab('godmode')}
+              onClick={() => setActiveTab('simulator')}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                activeTab === 'godmode'
+                activeTab === 'simulator'
                   ? 'bg-purple-500/20 text-purple-300 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
               }`}
             >
               <Settings size={16} />
-              God Mode
+              Scenario Simulator
             </button>
             <button
               onClick={() => setActiveTab('bathymetry3d')}
@@ -635,7 +635,7 @@ const App: React.FC = () => {
             </div>
           </>
         ) : (
-          <GodMode />
+          <TwinScenarioSimulator />
         )}
         
         {/* Floating Chatbot */}

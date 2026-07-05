@@ -6,7 +6,7 @@ import GodModeChart from './GodModeChart';
 import { SeasonalData, SchedulerLogEntry } from '../types';
 import { api } from '../services/api';
 
-const GodMode: React.FC = () => {
+const TwinScenarioSimulator: React.FC = () => {
   const [selectedReservoirId, setSelectedReservoirId] = useState(RESERVOIRS[0].id);
   const [rainfallMultiplier, setRainfallMultiplier] = useState(1);
   const [temperatureOffset, setTemperatureOffset] = useState(0);
@@ -133,7 +133,7 @@ const GodMode: React.FC = () => {
           
           <div className="flex items-center gap-3 mb-6">
             <Settings className="text-purple-400 w-6 h-6" />
-            <h2 className="text-xl font-bold text-slate-100 uppercase tracking-widest">God Mode</h2>
+            <h2 className="text-xl font-bold text-slate-100 uppercase tracking-widest text-[14px]">Scenario Simulator</h2>
           </div>
 
           <div className="space-y-6">
@@ -360,7 +360,6 @@ const GodMode: React.FC = () => {
   );
 };
 
-
 // ─── Scheduler Admin Sub-Component ────────────────────────────────────
 const SchedulerAdminPanel: React.FC = () => {
   const [logs, setLogs] = useState<SchedulerLogEntry[]>([]);
@@ -413,7 +412,6 @@ const SchedulerAdminPanel: React.FC = () => {
     </div>
   );
 };
-
 
 // ─── Data Upload Sub-Component ────────────────────────────────────────
 const DataUploadPanel: React.FC = () => {
@@ -470,4 +468,4 @@ const DataUploadPanel: React.FC = () => {
   );
 };
 
-export default GodMode;
+export default TwinScenarioSimulator;

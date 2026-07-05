@@ -6,3 +6,4 @@ date,reservoir_id,surface_area_sqkm,volume_mcm,rainfall_mm,mndwi_mean,water_leve
 2026-07-05T15:30:52.553964,res-chembarambakkam,21.45,76.4,2.0,0.2833,3.6,74.2,0.407,0.002,0.0019,NORMAL
 2026-07-05T15:31:18.751430,res-cholavaram,5.51,12.0,8.0,0.244,2.2,40.0,0.5134,0.0005,0.0013,NORMAL
 2026-07-05T15:31:38.534958,res-cholavaram,5.6,12.6,8.0,0.2489,2.3,42.1,0.5099,0.0005,0.0013,NORMAL
+2026-07-05T15:44:07.576560,res-chembarambakkam,17.78,60.3,2.0,0.2263,3.4,58.5,0.3004,0.0004,0.0009,NORMAL

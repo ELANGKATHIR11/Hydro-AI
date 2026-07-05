@@ -59,7 +59,7 @@ const ModelFeedback: React.FC<ModelFeedbackProps> = ({ analysis, data, onFeedbac
       {feedbackState === 'idle' && (
         <div className="animate-fade-in">
             <p className="text-xs text-slate-400 mb-3">
-                Does this analysis match ground truth? Your feedback fine-tunes the Gemini-Pro hydrological model.
+                Does this analysis match ground truth? Your feedback fine-tunes the local hydrological models.
             </p>
             <div className="flex gap-2">
                 <button onClick={handlePositive} className="flex-1 bg-slate-800 hover:bg-green-900/20 hover:border-green-800 text-slate-300 hover:text-green-400 py-2 rounded text-xs font-medium flex items-center justify-center gap-2 border border-slate-700 transition-all">

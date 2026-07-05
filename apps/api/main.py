@@ -24,7 +24,7 @@ from .ml_models import (
     risk_system,
     compute_hybrid_risk,
 )
-from .ai_engine import generate_gemini_report, AIAnalysisRequest
+from .ai_engine import generate_local_report, AIAnalysisRequest
 from .weather_service import get_real_weather
 from .storage import (
     append_timeseries_row,
@@ -70,7 +70,7 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(title="HydroAI Lake Monitoring Platform", version="3.0.0", lifespan=lifespan)
 ROOT_DIR = Path(__file__).resolve().parent.parent
-FRONTEND_DIST_DIR = ROOT_DIR / "dist"
+FRONTEND_DIST_DIR = ROOT_DIR / "web" / "dist"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CORS
@@ -668,11 +668,11 @@ def simulate_digital_twin(req: DigitalTwinRequest):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# AI Analysis (Gemini)
+# Local Heuristic Analysis
 # ─────────────────────────────────────────────────────────────────────────────
-@app.post("/api/gemini/analyze")
+@app.post("/api/local/analyze")
 async def analyze_reservoir(request: AIAnalysisRequest):
-    result = await generate_gemini_report(request)
+    result = await generate_local_report(request)
     return result
 
 
