@@ -36,3 +36,4 @@ __pycache__/
 *.gdb/
 data/cache/
 
+node_modules
