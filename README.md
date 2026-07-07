@@ -141,6 +141,30 @@ conda run -n dgpu-core pytest tests/
 
 ---
 
+## 📦 Packages & Dependencies
+
+This project relies on standard open-source libraries for geospatial analysis, machine learning inference, and digital twin rendering.
+
+### 🐍 Python Backend Dependencies (`apps/api/requirements.txt`)
+- **FastAPI / Uvicorn**: High-performance asynchronous REST API server.
+- **Pydantic**: Data validation and setting management.
+- **GeoPandas / Fiona / Shapely**: Vector spatial data reading, buffering, projection, and geometry operations.
+- **Rasterio**: Reading and writing ISRO-NRSC/MOSDAC geospatial raster datasets.
+- **Scikit-Learn**: Powering local Random Forest models for volume prediction and anomaly detection.
+- **CatBoost / Isolation Forest**: Advanced tree models for telemetry surge classification and abnormal sensor readings.
+- **SQLAlchemy**: Local SQLite database storage engine for telemetry and metadata.
+- **ReportLab**: PDF report generation engines for Mapathon compliance and PDF layout exports.
+
+### ⚛️ Frontend React Dependencies (`apps/web/package.json`)
+- **Vite / React SPA**: Modern, lighting-fast development server and application framework.
+- **React-Leaflet / Leaflet**: Core GIS library rendering local and web map tiles, vector contours, and hazard layers.
+- **Recharts**: Responsive charting library for displaying historical telemetry and reservoir storage timelines.
+- **Lucide-React**: Clean, unified modern iconography.
+- **Axios**: Promised-based HTTP client for FastAPI communication.
+- **Google GenAI**: AI assistant integration support.
+
+---
+
 ## 📄 Licensing & Compliance
 
 ### Software Licenses

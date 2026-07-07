@@ -1,0 +1,10 @@
+# Exclude data, output, and config files from GitHub language stats
+*.json linguist-documentation
+*.geojson linguist-documentation
+*.gpkg linguist-documentation
+*.db linguist-documentation
+data/**/* linguist-documentation
+outputs/**/* linguist-documentation
+qgis/**/* linguist-documentation
+catboost_info/**/* linguist-documentation
+docs/**/* linguist-documentation
