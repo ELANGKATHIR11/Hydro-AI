@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:frontend": "npm run build --prefix apps/web",
+    "start:backend": "C:\\Users\\elang\\miniconda3\\envs\\dgpu-core\\python.exe -m apps.api.main",
+    "start": "npm run build:frontend && npm run start:backend"
   },
   "dependencies": {
     "react": "^19.2.4",

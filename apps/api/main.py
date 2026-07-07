@@ -72,6 +72,10 @@ app = FastAPI(title="HydroAI Lake Monitoring Platform", version="3.0.0", lifespa
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST_DIR = ROOT_DIR / "web" / "dist"
 
+# Import and include Mapathon endpoints
+from .mapathon_endpoints import router as mapathon_router
+app.include_router(mapathon_router)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CORS
 # ─────────────────────────────────────────────────────────────────────────────

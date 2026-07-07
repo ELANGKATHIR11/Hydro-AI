@@ -1,119 +1,155 @@
-# HydroAI: Water-Body Digital Twin & Reservoir Fleet Monitor
+# 🌊 Hydro-AI Mapathon Edition
+### *Flood Susceptibility Mapping, Water Source Identification & Water Quality Index (WQI) Analytics*
 
-HydroAI is a state-of-the-art geospatial monitoring dashboard and ML-powered digital twin platform designed to track water spread, predict reservoir volumes, and forecast hydrological risks (floods and droughts) for the critical reservoirs in Tamil Nadu, India.
+Hydro-AI is a production-ready, offline-first geospatial pipeline and digital twin dashboard configured for flood hazard assessment and public water resource management in Tamil Nadu, India (specifically optimized for **Kancheepuram** and surrounding districts). 
+
+Developed for mapathons and geospatial compliance audits, it integrates Free and Open Source Software (FOSS) technologies, localized machine learning models, and interactive GIS visualization.
 
 ---
 
 ## 🏗️ System Architecture
 
+The following diagram illustrates the end-to-end data ingestion, offline processing pipeline, backend analytics, and frontend GIS interface:
+
 ```mermaid
 graph TD
-    %% Frontend Section
-    subgraph Frontend [React SPA - apps/web]
-        UI[Vite + React 19 / TypeScript]
-        Map[Leaflet Interactive GIS Map]
-        Insights[Live Heuristic Insights Panel]
-        TwinSim[Scenario Simulator Panel]
-        Provenance[Data Provenance Service]
-    end
+    %% Styling
+    classDef ingest fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef pipeline fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef backend fill:#fbf,stroke:#333,stroke-width:2px;
+    classDef frontend fill:#bfb,stroke:#333,stroke-width:2px;
 
     %% Ingestion Section
-    subgraph Ingestion [ETL Ingestion Adapters]
-        Sensors[Sentinel-1 / Sentinel-2 / Landsat]
-        DEM[DEM / Land Cover / Rainfall]
-        OSM[OSM Water Boundaries]
-        WQ[Water Quality Tables]
+    subgraph Ingestion ["1. Data Ingestion & Data Sources"]
+        SOI[Survey of India District Boundaries]
+        NRSC[ISRO-NRSC Bhuvan & MOSDAC Datasets]
+        WQ[Water Quality Station Lab Data]
     end
+    class SOI,NRSC,WQ ingest;
 
-    %% Backend Section
-    subgraph Backend [FastAPI API - apps/api]
-        API[FastAPI Server]
-        GeePipe[Spectral Index Pipeline - MNDWI/NDWI]
-        MLEngine[ML Model Registry]
-        RF[Random Forest - Volume Prediction]
-        CB[CatBoost - Flood/Drought Classifier]
-        EIF[Extended Isolation Forest - Anomaly Detection]
-        RuleEngine[Rule-Based Report Generator]
+    %% Processing Section
+    subgraph Pipeline ["2. Reproducible Geospatial Pipeline"]
+        IngestScript[ingest_soi.py & ingest_isro.py]
+        TerrainScript[terrain_drainage.py]
+        FloodScript[flood_mapping.py]
+        WQScript[water_quality.py]
+        ValidationScript[validate_outputs.py]
     end
+    class IngestScript,TerrainScript,FloodScript,WQScript,ValidationScript pipeline;
 
-    %% Database & Vector Section
-    subgraph Storage [Geospatial & Semantic Databases]
-        Postgres[(PostgreSQL + PostGIS)]
-        Qdrant[(Local Qdrant Vector DB)]
-        Schema[10 Core Tables: Telemetry / Snapshots / Catalog]
+    %% Storage & Backend
+    subgraph Backend ["3. Offline-First Storage & FastAPI Backend (apps/api)"]
+        SQLite[(hydroai.db - Metadata & Telemetry)]
+        GPKG[(hydro_ai_mapathon.gpkg - Vector & Raster Layers)]
+        FastAPI[FastAPI Server - uvicorn]
+        RF[Random Forest Volume Estimator]
+        CatBoost[CatBoost Risk Classifier]
+        IForest[Isolation Forest Anomaly Detector]
     end
+    class SQLite,GPKG,FastAPI,RF,CatBoost,IForest backend;
+
+    %% Frontend Section
+    subgraph Frontend ["4. Leaflet GIS Dashboard & Mapathon Portal (apps/web)"]
+        React[Vite + React SPA]
+        Leaflet[Leaflet GIS View]
+        Compliance[Mapathon Compliance Portal]
+    end
+    class React,Leaflet,Compliance frontend;
 
     %% Connections
-    UI -->|API Requests / Proxied| API
-    Map -->|GeoJSON Boundaries| Postgres
-    Ingestion -->|Local Raw Clipped Rasters| Backend
-    API -->|Queries / GIS Functions| Postgres
-    API -->|Semantic Search / Provenance| Qdrant
-    MLEngine --> RF
-    MLEngine --> CB
-    MLEngine --> EIF
-    API --> MLEngine
+    Ingestion -->|Pipeline Scripts| Pipeline
+    Pipeline -->|Populates Vector Layers| GPKG
+    Pipeline -->|Ingests Telemetry / Station Data| SQLite
+    FastAPI -->|Queries SQL & GPKG Metadata| SQLite
+    FastAPI -->|Serves Layer Schemas / Geometries| GPKG
+    FastAPI -->|Executes Local Inference| RF
+    FastAPI -->|Executes Local Inference| CatBoost
+    FastAPI -->|Executes Local Inference| IForest
+    React -->|REST API Calls & GeoJSON requests| FastAPI
+    React -->|Renders Map Layers & Charts| Leaflet
 ```
 
 ---
 
 ## 🌟 Key Features
 
-1. **Geospatial Map Visualization**:
-   - Built on Leaflet with dynamic water body overlay boundaries matching live MNDWI spectral indices.
-   - Interactive Full Tank Level (FTL) boundaries and historic water-spread comparisons.
-
-2. **Offline-First ETL Pipeline**:
-   - Standardized adapters under `src/ingestion/` supporting Sentinel-2/1, Landsat, local DEM clips, OSM contours, and water quality datasets.
-   - Strictly keeps data footprint under a 4 GB storage budget via automatic clipping and COG LZW compression.
-
-3. **Local Qdrant Semantic DB**:
-   - Persisted vector search indexing offline under `qdrant_storage/`.
-   - Idempotently indexes dataset cards, snapshot histories, and patch-level feature vectors with local deterministic embeddings.
-
-4. **Automated ML Pipelines**:
-   - **Random Forest Regressor**: Predicts storage volumes based on surface area, season, and rainfall.
-   - **CatBoost Classifier**: Evaluates hybrid probabilities for flood and drought risks.
-   - **Extended Isolation Forest (EIF)**: Flags volume/area telemetry anomalies relative to multi-year seasonal averages.
-
-5. **Robust 10-Table Database**:
-   - PostgreSQL backed by the PostGIS spatial extension storing spatial features, water contours, historical observations, and system logs.
+- 🛰️ **Geospatial Pipeline**: Modular Python scripts using `GeoPandas`, `Rasterio`, and `Shapely` to download, process, and align Survey of India (SOI) boundaries, ISRO-NRSC raster data, and terrain models.
+- 🌊 **Flood Susceptibility Mapping**: Computes 5-class flood hazard maps (Very Low, Low, Moderate, High, Very High) combining GIS weighted overlay and Local Random Forest models.
+- 🔬 **Water Quality Index (WQI) Analytics**: Computes WQI using weighted sub-indices of 10 standard physical-chemical parameters (pH, turbidity, TDS, DO, BOD, COD, nitrate, fluoride, iron, coliform) with strict data validation rules.
+- 🤖 **Offline Machine Learning Suite**:
+  - **Random Forest Volume Estimator**: Predicts reservoir volume capacity from water spread surface area.
+  - **CatBoost Risk Classifier**: Analyzes hydrological risk state (Normal, Moderate Risk, High Risk, Critical).
+  - **Isolation Forest Anomaly Detection**: Tracks telemetry fluctuations for sensor health drift and chemical surges.
+- 🗺️ **Interactive Digital Twin Dashboard**: Built using Vite + React, Leaflet, and Recharts to visualize watershed contours, water spread dynamics, and mapathon compliance reports.
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- PostgreSQL 15+ with PostGIS enabled
-- Conda package manager (environment `dgpu-core`)
+This repository runs natively on Windows with **Miniconda** (configured for offline local environments, no Docker required).
 
-### 1. Database Setup
-Create a PostgreSQL database named `hydroai` and run the schema and seed scripts:
-```bash
-# Connect to your postgres instance and run:
-python scripts/create_db.py
-python scripts/load_postgis.py
+### 1. Environment Setup
+
+Launch Anaconda Prompt and activate the target conda environment:
+```cmd
+conda activate dgpu-core
 ```
 
-### 2. Local Qdrant Setup
-Initialize local vector database collections and populate semantic files:
-```bash
-python scripts/index_qdrant.py
-```
-
-### 3. Environment Variables Configuration
-Create a `.env` file in the root directory:
+### 2. Configure target District
+Configure your `.env` file using the template `.env.example`:
 ```env
-DATABASE_URL="postgresql://postgres:Akilaarasu1!@localhost:5432/hydroai"
-PYTHONUNBUFFERED=1
+DISTRICT=Kancheepuram
+DATABASE_URL=sqlite:///hydro_ai_mapathon.db
+ALLOW_SYNTHETIC_DATA=TRUE
 ```
 
-### 4. Running the Dashboard
-```bash
-# Start the unified backend (serves React frontend index statically)
-cd apps
-$env:DATABASE_URL="postgresql://postgres:Akilaarasu1!@localhost:5432/hydroai"; conda run -n dgpu-core uvicorn api.main:app --host 127.0.0.1 --port 8000
+### 3. Run Ingestion and Analysis Pipeline
+Run the reproducible pipeline scripts in order to ingest data, execute terrain analysis, and build output GeoPackages:
+```cmd
+python scripts/ingest_soi.py
+python scripts/ingest_isro.py
+python scripts/terrain_drainage.py
+python scripts/flood_mapping.py
+python scripts/water_sources.py
+python scripts/water_quality.py
+python scripts/validate_outputs.py
 ```
-Visit `http://localhost:8000/` in your browser.
+This generates the Mapathon GeoPackage output under `outputs/geopackage/hydro_ai_mapathon.gpkg`.
+
+### 4. Run the Backend & Dashboard
+
+To run the application locally:
+1. **Start the FastAPI Backend**:
+   ```cmd
+   conda run -n dgpu-core uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
+   ```
+2. **Start the React Frontend**:
+   ```cmd
+   npm install
+   npm run dev
+   ```
+   Open `http://localhost:3000/` to inspect the Mapathon dashboard!
+
+---
+
+## 🧪 Running Tests
+
+Ensure system reliability and conformance to GIS schemas using pytest:
+```cmd
+conda run -n dgpu-core pytest tests/
+```
+
+---
+
+## 📄 Licensing & Compliance
+
+### Software Licenses
+- **Source Code**: Dual-licensed under the [Apache-2.0 License](file:///f:/hydroai-geospatial-dashboard%20%283%29/LICENSE).
+- **Geospatial layers, print layouts, and reports**: Licensed under [Creative Commons Attribution-ShareAlike 4.0 (CC-BY-SA-4.0)](file:///f:/hydroai-geospatial-dashboard%20%283%29/LICENSE-CC-BY-SA-4.0).
+
+### Policy Compliance
+This project adheres to key Indian geospatial directives:
+- **National Geospatial Policy (NGP) 2022**: Prioritizes open source software stack (GDAL, QGIS, Geopandas, Leaflet), uses non-restricted base boundaries, and publishes public data catalogs.
+- **Indian Space Policy 2023**: Integrates with datasets hosted by ISRO (NRSC, MOSDAC, Bhuvan) while maintaining strict civilian-use boundaries (water security, flood disaster resilience, and agricultural planning).
+- **No Sensitive Infrastructure**: Strictly masks and excludes high-resolution defense and national security installations in compliance with national security guidelines.
+

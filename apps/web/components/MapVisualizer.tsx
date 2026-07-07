@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, CircleMarker, Popup, useMap, LayersControl, Marker, Tooltip, useMapEvents } from 'react-leaflet';
-import { Reservoir, SeasonalData, LakeSummaryEntry } from '../types';
-import { generateWaterPolygon, getOfficialBoundaries, RESERVOIRS } from '../services/mockData';
-import { Layers, Map as MapIcon } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Polygon, Polyline } from 'react-leaflet';
 import L from 'leaflet';
+import { Map as MapIcon, Layers as LayersIcon, Filter } from 'lucide-react';
+import axios from 'axios';
 
 // Fix for default Leaflet icons in React
 // @ts-ignore
@@ -14,404 +13,274 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-interface MapVisualizerProps {
-  reservoir: Reservoir;
-  data: SeasonalData;
-  label?: string; // Optional label for comparison mode
-  isLive?: boolean; // Status of the data feed
-  sharedView?: { center: [number, number]; zoom: number } | null;
-  onViewChange?: (view: { center: [number, number]; zoom: number }) => void;
-  isComparisonMode?: boolean;
-  onReservoirSelect?: (id: string) => void;
-  lakeSummaries?: LakeSummaryEntry[];
-}
+// District bounding center
+const KANCHEEPURAM_CENTER: [number, number] = [12.98, 79.97];
 
-const DEFAULT_CENTER: [number, number] = [13.0, 80.0];
-
-const isValidCoordinate = (coord: any): coord is [number, number] => {
-  return Array.isArray(coord) && 
-         coord.length === 2 && 
-         typeof coord[0] === 'number' && Number.isFinite(coord[0]) && !Number.isNaN(coord[0]) &&
-         typeof coord[1] === 'number' && Number.isFinite(coord[1]) && !Number.isNaN(coord[1]);
+// Color blind friendly scales
+const FLOOD_COLORS = {
+  'Very High': '#d7191c', // Red
+  'High': '#fdae61',      // Orange
+  'Moderate': '#ffffbf',  // Yellow
+  'Low': '#abd9e9',       // Light Blue
+  'Very Low': '#2c7bb6'   // Dark Blue
 };
+
+const WQI_COLORS = {
+  'Excellent': '#0571b0',  // Dark Blue
+  'Good': '#92c5de',       // Light Blue
+  'Poor': '#f4a582',       // Peach
+  'Very Poor': '#ca0020',   // Red
+  'Unsuitable': '#5e3c99',  // Purple
+  'No Data': '#94a3b8'     // Slate Gray
+};
+
+interface MapVisualizerProps {
+  activeTab: string;
+  selectedWqiClass: string;
+  selectedFloodClass: string;
+  selectedWaterType: string;
+}
 
 const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
   useEffect(() => {
-    if (isValidCoordinate(center)) {
-       // Debounce flyTo or handle potential animation conflicts if needed
-       map.flyTo(center, 12, { duration: 2 });
-    }
+    map.setView(center, 10);
   }, [center, map]);
   return null;
 };
 
-const MapSync: React.FC<{
-  sharedView?: { center: [number, number]; zoom: number } | null;
-  onViewChange?: (view: { center: [number, number]; zoom: number }) => void;
-  isComparisonMode?: boolean;
-}> = ({ sharedView, onViewChange, isComparisonMode }) => {
-  const map = useMap();
-  const isUpdatingRef = useRef(false);
+const MapVisualizer: React.FC<MapVisualizerProps> = ({
+  activeTab,
+  selectedWqiClass,
+  selectedFloodClass,
+  selectedWaterType
+}) => {
+  const [floodCells, setFloodCells] = useState<any[]>([]);
+  const [waterSources, setWaterSources] = useState<any[]>([]);
+  const [waterQuality, setWaterQuality] = useState<any[]>([]);
+  const [layerOpacity, setLayerOpacity] = useState<number>(0.85);
 
   useEffect(() => {
-    if (isComparisonMode && sharedView && isValidCoordinate(sharedView.center) && !isUpdatingRef.current) {
-      const currentCenter = map.getCenter();
-      const currentZoom = map.getZoom();
-      
-      const dist = currentCenter.distanceTo(sharedView.center);
-      if (dist > 5 || currentZoom !== sharedView.zoom) {
-        isUpdatingRef.current = true;
-        map.setView(sharedView.center, sharedView.zoom, { animate: false });
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 50);
-      }
-    }
-  }, [sharedView, map, isComparisonMode]);
+    // In strict production, fetch real data from local-first endpoints
+    axios.get('http://localhost:8000/api/mapathon/layer/flood_susceptibility')
+      .then(res => setFloodCells(res.data.features || []))
+      .catch(() => {});
 
-  useMapEvents({
-    move: () => {
-      if (isComparisonMode && onViewChange && !isUpdatingRef.current) {
-        const center = map.getCenter();
-        if (isValidCoordinate([center.lat, center.lng])) {
-          onViewChange({ center: [center.lat, center.lng], zoom: map.getZoom() });
-        }
-      }
-    },
-    zoom: () => {
-      if (isComparisonMode && onViewChange && !isUpdatingRef.current) {
-        const center = map.getCenter();
-        if (isValidCoordinate([center.lat, center.lng])) {
-          onViewChange({ center: [center.lat, center.lng], zoom: map.getZoom() });
-        }
-      }
-    }
-  });
+    axios.get('http://localhost:8000/api/mapathon/layer/water_sources')
+      .then(res => setWaterSources(res.data.features || []))
+      .catch(() => {});
 
-  return null;
-};
+    axios.get('http://localhost:8000/api/mapathon/layer/water_quality')
+      .then(res => setWaterQuality(res.data.features || []))
+      .catch(() => {});
+  }, []);
 
-const MapResizer: React.FC = () => {
-  const map = useMap();
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
-    });
-    const container = map.getContainer();
-    if (container) {
-      resizeObserver.observe(container);
-    }
-    return () => {
-      if (container) {
-        resizeObserver.unobserve(container);
-      }
-      resizeObserver.disconnect();
-    };
-  }, [map]);
-  return null;
-};
+  // Filter lists based on props
+  const filteredFloodCells = useMemo(() => {
+    if (selectedFloodClass === 'all') return floodCells;
+    return floodCells.filter(f => f.properties?.susceptibility_class === selectedFloodClass);
+  }, [floodCells, selectedFloodClass]);
 
-const MapVisualizer: React.FC<MapVisualizerProps> = ({ reservoir, data, label, isLive = false, sharedView, onViewChange, isComparisonMode, onReservoirSelect, lakeSummaries }) => {
-  const [layerOpacity, setLayerOpacity] = useState(0.65);
-  const [showBoundaries, setShowBoundaries] = useState(false);
-  
-  const officialBoundaries = useMemo(() => getOfficialBoundaries(), []);
+  const filteredWaterSources = useMemo(() => {
+    if (selectedWaterType === 'all') return waterSources;
+    return waterSources.filter(s => s.properties?.source_type === selectedWaterType);
+  }, [waterSources, selectedWaterType]);
 
-  // Guard against undefined/bad reservoir data with strict fallback
-  if (!reservoir) {
-    return (
-      <div className="w-full h-full min-h-[400px] rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <p className="text-slate-500 dark:text-slate-400">Select a reservoir to view map</p>
-      </div>
-    );
-  }
-
-  const safeReservoirLocation = useMemo((): [number, number] => {
-    if (reservoir && isValidCoordinate(reservoir.location)) {
-        return reservoir.location;
-    }
-    return DEFAULT_CENTER;
-  }, [reservoir]);
-
-  // Derived inlet location with strict validation
-  const inletLocation = useMemo((): [number, number] | null => {
-    if (!isValidCoordinate(safeReservoirLocation)) return null;
-    const lat = safeReservoirLocation[0] + 0.015;
-    const lng = safeReservoirLocation[1] - 0.015;
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        return [lat, lng];
-    }
-    return null;
-  }, [safeReservoirLocation]);
-
-  const waterPolygon = useMemo(() => {
-    if (!data || typeof data.volume !== 'number' || !reservoir || !reservoir.maxCapacity) return [];
-    
-    // Additional safety check for location
-    if (!isValidCoordinate(safeReservoirLocation)) {
-        return [];
-    }
-
-    let volPct = (data.volume / reservoir.maxCapacity) * 100;
-    // Ensure volPct is a finite number
-    if (!Number.isFinite(volPct) || Number.isNaN(volPct)) volPct = 0;
-    
-    const poly = generateWaterPolygon(safeReservoirLocation, volPct);
-    
-    // Filter out any potential invalid points to satisfy Leaflet
-    return poly.filter(p => isValidCoordinate(p));
-  }, [reservoir, data, safeReservoirLocation]);
-
-  const volumePercentage = useMemo(() => {
-    if (!data?.volume || !reservoir?.maxCapacity) return 0;
-    const val = (data.volume / reservoir.maxCapacity) * 100;
-    return Number.isFinite(val) ? val : 0;
-  }, [data, reservoir]);
-
-  const mapOptions = useMemo(() => {
-    let fillColor, strokeColor;
-    
-    // Gradient: Lighter blues for low capacity, Darker/Deep blues for high capacity
-    if (volumePercentage >= 80) {
-      fillColor = '#1e40af'; // blue-800 (High Depth/Volume)
-      strokeColor = '#172554'; // blue-950
-    } else if (volumePercentage >= 60) {
-      fillColor = '#2563eb'; // blue-600
-      strokeColor = '#1e3a8a'; // blue-900
-    } else if (volumePercentage >= 40) {
-      fillColor = '#3b82f6'; // blue-500
-      strokeColor = '#1d4ed8'; // blue-700
-    } else if (volumePercentage >= 20) {
-      fillColor = '#60a5fa'; // blue-400
-      strokeColor = '#2563eb'; // blue-600
-    } else {
-      fillColor = '#93c5fd'; // blue-300 (Shallow)
-      strokeColor = '#3b82f6'; // blue-500
-    }
-
-    return {
-      fillColor,
-      fillOpacity: layerOpacity, // Use dynamic opacity
-      color: strokeColor,
-      weight: 2
-    };
-  }, [volumePercentage, layerOpacity]);
+  const filteredWaterQuality = useMemo(() => {
+    if (selectedWqiClass === 'all') return waterQuality;
+    return waterQuality.filter(q => q.properties?.wqi_class === selectedWqiClass);
+  }, [waterQuality, selectedWqiClass]);
 
   return (
-    <div className="h-full w-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl relative">
-      <MapContainer 
-        key={`${reservoir?.id}`} 
-        center={safeReservoirLocation} 
-        zoom={12} 
-        style={{ height: '100%', width: '100%', background: '#0f172a' }}
+    <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-800">
+      <MapContainer
+        center={KANCHEEPURAM_CENTER}
+        zoom={10}
         scrollWheelZoom={true}
+        className="w-full h-full z-10"
       >
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Dark Matter (Data)">
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Satellite (Esri)">
-            <TileLayer
-              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="OpenStreetMap">
-             <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
-        
-        <MapResizer />
-        <MapUpdater center={safeReservoirLocation} />
-        <MapSync sharedView={sharedView} onViewChange={onViewChange} isComparisonMode={isComparisonMode} />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapUpdater center={KANCHEEPURAM_CENTER} />
 
-        {/* Dynamic Water Spread Polygon */}
-        {waterPolygon.length > 0 && (
-          <Polygon positions={waterPolygon as any} pathOptions={mapOptions}>
-             <Popup>
-              <div className="text-slate-900 text-sm">
-                <strong className="text-base">{reservoir?.name || 'Reservoir'}</strong>
-                <hr className="my-1 border-slate-300"/>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                   <span>Water Area:</span> <span className="font-mono">{data?.surfaceArea} km²</span>
-                   <span>Volume:</span> <span className="font-mono">{data?.volume} MCM</span>
-                   <span>Capacity:</span> <span className="font-mono">{Math.round(volumePercentage)}%</span>
-                   <span>Level:</span> <span className="font-mono">{data?.waterLevel} m</span>
-                </div>
-              </div>
-            </Popup>
-          </Polygon>
-        )}
-        
-        {/* Official Boundaries Layer */}
-        {showBoundaries && officialBoundaries.map(b => (
-            <Polygon 
-                key={b.id} 
-                positions={b.coordinates}
-                pathOptions={{
-                    color: '#f97316', // Orange-500
-                    weight: 2,
-                    dashArray: '5, 10',
-                    fillOpacity: 0.05,
-                    fillColor: '#f97316'
-                }}
-            >
-                <Tooltip sticky direction="top">
-                    <div className="text-xs text-center">
-                        <strong className="text-orange-600 block mb-0.5">Official Boundary (FTL)</strong>
-                        <span className="text-slate-700">{b.name}</span>
-                    </div>
-                </Tooltip>
-            </Polygon>
-        ))}
-
-        {isValidCoordinate(safeReservoirLocation) && (
-          <CircleMarker center={safeReservoirLocation} radius={4} pathOptions={{color: 'white', opacity: 0.8, fillColor: 'white', fillOpacity: 1}}>
-             <Tooltip direction="top" offset={[0, -5]} opacity={1} permanent>
-                Depth Probe
-             </Tooltip>
-          </CircleMarker>
-        )}
-
-        {inletLocation && isValidCoordinate(inletLocation) && (
-          <Marker position={inletLocation}>
-               <Popup>
-                 <div className="text-slate-900">
-                   <strong>Primary Inflow</strong><br/>
-                   Flow Rate: {(data?.rainfall ? (data.rainfall * 0.2).toFixed(1) : '0.0')} m³/s
-                 </div>
-               </Popup>
-          </Marker>
-        )}
-
-        {/* Render markers for ALL reservoirs to allow selection */}
-        {RESERVOIRS.map((res) => {
-            if (res.id === reservoir.id) return null;
-            if (!isValidCoordinate(res.location)) return null;
-
-            // Resolve lake status from summaries for color coding
-            const summary = lakeSummaries?.find(ls => ls.id === res.id);
-            const alertColor = summary
-              ? summary.latest_alert === 'FLOOD' ? '#ef4444'
-              : summary.latest_alert === 'DROUGHT' ? '#f97316'
-              : summary.latest_alert === 'ANOMALY' ? '#eab308'
-              : '#22c55e'
-              : '#94a3b8';
+        {/* 1. Flood suscetibility grid points/polygons */}
+        {(activeTab === 'flood' || activeTab === 'overview') && 
+          filteredFloodCells.map((feature, idx) => {
+            const coords = feature.geometry.coordinates;
+            // Simulated grid cell bounds or circle marker
+            const lat = coords[1];
+            const lng = coords[0];
+            const cls = feature.properties?.susceptibility_class || 'Moderate';
+            const color = FLOOD_COLORS[cls as keyof typeof FLOOD_COLORS] || '#ffffbf';
 
             return (
-                <CircleMarker
-                    key={`status-${res.id}`}
-                    center={res.location}
-                    radius={8}
-                    pathOptions={{ color: alertColor, fillColor: alertColor, fillOpacity: 0.8, weight: 2 }}
-                    eventHandlers={{
-                        click: () => {
-                            if (onReservoirSelect) {
-                                onReservoirSelect(res.id);
-                            }
-                        }
-                    }}
-                >
-                    <Tooltip>
-                        <div className="text-xs">
-                            <span className="font-semibold">{res.name}</span><br/>
-                            {summary ? (
-                                <>
-                                    <span>Area: {summary.latest_area_sqkm?.toFixed(1) ?? '—'} km²</span><br/>
-                                    <span>Vol: {summary.latest_volume_mcm?.toFixed(1) ?? '—'} MCM</span><br/>
-                                    <span>Status: <strong style={{color: alertColor}}>{summary.latest_alert || 'NONE'}</strong></span>
-                                </>
-                            ) : (
-                                <span className="text-slate-500">Click to Select</span>
-                            )}
-                        </div>
-                    </Tooltip>
-                </CircleMarker>
+              <CircleMarker
+                key={`flood-${idx}`}
+                center={[lat, lng]}
+                radius={12}
+                pathOptions={{
+                  color: color,
+                  fillColor: color,
+                  fillOpacity: layerOpacity,
+                  weight: 1
+                }}
+              >
+                <Popup>
+                  <div className="text-slate-900 p-1 text-xs space-y-1">
+                    <div className="font-bold text-sm">Flood Susceptibility cell</div>
+                    <div><strong>Risk Class:</strong> {cls}</div>
+                    <div><strong>GIS Score:</strong> {feature.properties?.gis_weighted_score}</div>
+                    <div><strong>ML Probability:</strong> {feature.properties?.ml_flood_prob}</div>
+                    <div><strong>Confidence:</strong> {feature.properties?.confidence_score}</div>
+                    <div><strong>Elevation:</strong> {feature.properties?.elevation_m} m</div>
+                    <div><strong>Slope:</strong> {feature.properties?.slope_deg}°</div>
+                    <div className="text-[10px] text-slate-500 mt-1">Source: ISRO-NRSC (SOB/NOEDA)</div>
+                  </div>
+                </Popup>
+              </CircleMarker>
             );
-        })}
+          })
+        }
 
+        {/* 2. Water Sources inventory */}
+        {(activeTab === 'sources' || activeTab === 'overview') &&
+          filteredWaterSources.map((feature, idx) => {
+            const coords = feature.geometry.coordinates;
+            const lat = coords[1];
+            const lng = coords[0];
+            const type = feature.properties?.source_type || 'Lake';
+            const persistence = feature.properties?.seasonal_reliability || 'High';
+            
+            return (
+              <CircleMarker
+                key={`source-${idx}`}
+                center={[lat, lng]}
+                radius={8}
+                pathOptions={{
+                  color: '#0284c7',
+                  fillColor: '#0ea5e9',
+                  fillOpacity: 0.9,
+                  weight: 2
+                }}
+              >
+                <Popup>
+                  <div className="text-slate-900 p-1 text-xs">
+                    <div className="font-bold text-sm">{feature.properties?.source_name}</div>
+                    <div><strong>Type:</strong> {type}</div>
+                    <div><strong>Persistence:</strong> {persistence}</div>
+                    <div><strong>Authority:</strong> {feature.properties?.authority}</div>
+                    <div className="text-[10px] text-slate-500 mt-1">Data Source: {feature.properties?.source}</div>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })
+        }
+
+        {/* 3. Water Quality points (WQI) */}
+        {(activeTab === 'quality' || activeTab === 'overview') &&
+          filteredWaterQuality.map((feature, idx) => {
+            const coords = feature.geometry.coordinates;
+            const lat = coords[1];
+            const lng = coords[0];
+            const cls = feature.properties?.wqi_class || 'Excellent';
+            const color = WQI_COLORS[cls as keyof typeof WQI_COLORS] || '#94a3b8';
+            const contamination = feature.properties?.contamination_risk || 'Low';
+
+            return (
+              <CircleMarker
+                key={`wq-${idx}`}
+                center={[lat, lng]}
+                radius={9}
+                pathOptions={{
+                  color: '#ffffff',
+                  fillColor: color,
+                  fillOpacity: 0.95,
+                  weight: 1.5
+                }}
+              >
+                <Popup>
+                  <div className="text-slate-900 p-1 text-xs space-y-1">
+                    <div className="font-bold text-sm">WQI monitoring Station</div>
+                    <div><strong>WQI Class:</strong> <span className="font-bold" style={{ color: color }}>{cls}</span> (Score: {feature.properties?.wqi || 'No Data'})</div>
+                    <div><strong>Contamination Risk:</strong> {contamination}</div>
+                    <div className="border-t border-slate-200 mt-1 pt-1 space-y-0.5">
+                      <div>pH: {feature.properties?.ph || 'No Data'}</div>
+                      <div>Turbidity: {feature.properties?.turbidity || 'No Data'} NTU</div>
+                      <div>TDS: {feature.properties?.tds || 'No Data'} mg/L</div>
+                      <div>DO: {feature.properties?.do || 'No Data'} mg/L</div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">Sample Date: {feature.properties?.sample_date}</div>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })
+        }
       </MapContainer>
-      
-      {/* Overlay Info */}
-      <div className="absolute top-4 left-14 z-[400] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 text-xs shadow-xl print:hidden w-64">
-         {label && (
-             <div className="mb-2 pb-2 border-b border-slate-700">
-                 <h4 className="font-bold text-white uppercase tracking-wider">{label}</h4>
-             </div>
-         )}
-         <h4 className={`font-bold flex items-center gap-2 ${isLive ? 'text-sky-400' : 'text-orange-400'}`}>
-            <span className="relative flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isLive ? 'bg-sky-400' : 'bg-orange-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${isLive ? 'bg-sky-500' : 'bg-orange-500'}`}></span>
-            </span>
-            {isLive ? 'Live Satellite Feed' : 'Simulated Physics Feed'}
-         </h4>
-         <p className="text-slate-300 mt-1">Source: {isLive ? 'Sentinel-2 (L2A)' : 'Approximation Model'}</p>
-         
-         <div className="mt-3">
-             <div className="flex justify-between items-center text-slate-400 mb-1">
-                <span className="flex items-center gap-1"><Layers size={10}/> Layer Opacity</span>
-                <span className="font-mono">{Math.round(layerOpacity * 100)}%</span>
-             </div>
-             <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.05"
-                value={layerOpacity}
-                onChange={(e) => setLayerOpacity(parseFloat(e.target.value))}
-                className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-             />
-         </div>
 
-         {/* Official Boundary Toggle */}
-         <div className="flex items-center justify-between text-slate-300 mt-3 pt-3 border-t border-slate-700">
-             <span className="flex items-center gap-1.5 font-medium"><MapIcon size={12} className="text-orange-400"/> Official Boundaries</span>
-             <button 
-                onClick={() => setShowBoundaries(!showBoundaries)}
-                className={`w-8 h-4 rounded-full transition-colors relative ${showBoundaries ? 'bg-indigo-600' : 'bg-slate-700'}`}
-             >
-                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showBoundaries ? 'translate-x-4' : ''}`}></span>
-             </button>
-         </div>
-
-         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-700">
-            <div className="flex flex-col gap-1 w-full">
-                <span className="text-[10px] text-slate-400">Water Intensity Index</span>
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-300 via-blue-500 to-blue-900 rounded-full"></div>
-                <div className="flex justify-between text-[8px] text-slate-500">
-                   <span>Low</span>
-                   <span>High</span>
-                </div>
+      {/* Control panel overlays */}
+      <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-slate-800 text-xs shadow-2xl w-60">
+        <h4 className="font-bold text-slate-100 mb-2 uppercase flex items-center gap-1.5">
+          <LayersIcon size={12} className="text-indigo-400" />
+          Map Overlay Controls
+        </h4>
+        
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-slate-400 mb-1">
+              <span>Layer Opacity</span>
+              <span className="font-mono">{Math.round(layerOpacity * 100)}%</span>
             </div>
-         </div>
+            <input
+              type="range"
+              min="0.1"
+              max="1"
+              step="0.05"
+              value={layerOpacity}
+              onChange={(e) => setLayerOpacity(parseFloat(e.target.value))}
+              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
 
-         {/* Lake status legend */}
-         {lakeSummaries && lakeSummaries.length > 0 && (
-           <div className="mt-3 pt-2 border-t border-slate-700">
-             <span className="text-[10px] text-slate-400 block mb-1.5">Lake Status Legend</span>
-             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-               {[
-                 { color: '#ef4444', label: 'Flood Risk' },
-                 { color: '#f97316', label: 'Drought' },
-                 { color: '#eab308', label: 'Anomaly' },
-                 { color: '#22c55e', label: 'Normal' },
-               ].map(({ color, label }) => (
-                 <div key={label} className="flex items-center gap-1.5">
-                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-white/20" style={{ background: color }} />
-                   <span className="text-[9px] text-slate-400">{label}</span>
-                 </div>
-               ))}
-             </div>
-           </div>
-         )}
+          <div className="border-t border-slate-800 pt-2 space-y-2">
+            <span className="font-semibold text-slate-300 block">Map Legend</span>
+            
+            {activeTab === 'flood' && (
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 block">Flood Hazard Class</span>
+                {Object.entries(FLOOD_COLORS).map(([label, color]) => (
+                  <div key={label} className="flex items-center gap-2 text-slate-400">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'quality' && (
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 block">WQI Class</span>
+                {Object.entries(WQI_COLORS).map(([label, color]) => (
+                  <div key={label} className="flex items-center gap-2 text-slate-400">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {activeTab === 'overview' && (
+              <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400">
+                <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Flood Cell</div>
+                <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Water Source</div>
+                <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500" /> WQ Station</div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

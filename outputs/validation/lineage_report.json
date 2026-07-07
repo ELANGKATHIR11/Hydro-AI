@@ -1,0 +1,45 @@
+{
+    "timestamp": "2026-07-06T20:31:30.780187",
+    "geopackage_path": "outputs/geopackage/hydro_ai_mapathon.gpkg",
+    "geopackage_sha256": "3b848b82c37eabd43dcc9c1ef6c42291f12359d37235e3dab295dc68e94a992b",
+    "layers_validated": [
+        {
+            "layer_name": "soi_boundary",
+            "features_count": 1,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        },
+        {
+            "layer_name": "nrsc_data",
+            "features_count": 60,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        },
+        {
+            "layer_name": "terrain_features",
+            "features_count": 60,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        },
+        {
+            "layer_name": "flood_susceptibility",
+            "features_count": 60,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        },
+        {
+            "layer_name": "water_sources",
+            "features_count": 24,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        },
+        {
+            "layer_name": "water_quality",
+            "features_count": 24,
+            "crs": "EPSG:4326",
+            "status": "PASS"
+        }
+    ],
+    "validation_passed": true,
+    "issues": []
+}

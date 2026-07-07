@@ -137,3 +137,118 @@ export interface SchedulerLogEntry {
   status: string;
   message?: string;
 }
+
+// ─── Mapathon Data Contracts ───────────────────────────────────────────────
+
+export interface AOI {
+  district: string;
+  state: string;
+  boundingBox: [number, number, number, number]; // min_x, min_y, max_x, max_y
+}
+
+export interface MapLayer {
+  id: string;
+  name: string;
+  visible: boolean;
+  opacity: number;
+  color: string;
+  legendLabel: string;
+  source: string;
+  date: string;
+}
+
+export interface LayerProvenance {
+  layerId: string;
+  provider: string;
+  licensing: string;
+  processingSteps: string[];
+}
+
+export interface FloodRiskFeature {
+  id: string;
+  riskClass: 'Very Low' | 'Low' | 'Moderate' | 'High' | 'Very High';
+  confidence: number;
+  limitations: string;
+  factors: Record<string, number>;
+}
+
+export interface FloodFactor {
+  name: string;
+  weight: number;
+  description: string;
+}
+
+export interface WaterSource {
+  id: string;
+  name: string;
+  sourceType: string;
+  adminUnit: string;
+  persistence: string;
+  floodExposure: string;
+  sampleCount: number;
+  latestSampleDate: string;
+  authority: string;
+  provenance: string;
+}
+
+export interface WaterQualityObservation {
+  stationId: string;
+  parameterName: string;
+  observedValue: number | null; // null represents "No Data"
+  unit: string;
+  referenceRange: string;
+  sampleDate: string;
+  authority: string;
+  method: string;
+  confidence: string;
+}
+
+export interface WQIResult {
+  score: number | null;
+  wqiClass: 'Excellent' | 'Good' | 'Poor' | 'Very Poor' | 'Unsuitable' | 'No Data';
+}
+
+export interface DataSourceRegister {
+  dataset_name: string;
+  source_portal: string;
+  official_url: string;
+  provider: string;
+  download_date: string;
+  coverage: string;
+  resolution: string;
+  temporal_coverage: string;
+  license_or_terms: string;
+  sensitivity_status: string;
+  collection_method: string;
+  processing_steps: string;
+  used_in_output: string;
+}
+
+export interface ValidationResult {
+  timestamp: string;
+  geopackagePath: string;
+  geopackageSha256: string;
+  validationPassed: boolean;
+  issues: string[];
+}
+
+export interface DownloadAsset {
+  id: string;
+  name: string;
+  format: string;
+  available: boolean;
+  reasonDisabled?: string;
+  license: string;
+}
+
+export interface ComplianceCheck {
+  rule: string;
+  compliant: boolean;
+  details: string;
+}
+
+export interface SDGImpact {
+  sdg: string;
+  impactText: string;
+  badges: string[];
+}

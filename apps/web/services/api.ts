@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SeasonalData, AIAnalysisResult, MLMetricsResponse, LakeCatalogEntry, LakeDetail, LakeSummaryEntry, SeasonalTableRow as SeasonalTableRowType, VolumeRow, SeasonalComparisonRow, SchedulerLogEntry } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = window.location.port === '3000' ? 'http://localhost:8000' : window.location.origin;
 
 const asArray = <T>(value: unknown): T[] => {
     return Array.isArray(value) ? value as T[] : [];
